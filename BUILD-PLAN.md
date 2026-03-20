@@ -13,7 +13,7 @@
 - [x] **1.1** Ticket dashboard (Kanban + list views) ✅
 - [x] **1.2** Ticket detail panel (slide-out, timer, notes) ✅
 - [x] **1.3** Drag-and-drop Kanban ✅
-- [ ] **1.4** Client page — list all clients, contact info, ticket counts, SLA health
+- [x] **1.4** Client page — list all clients, contact info, ticket counts, SLA health ✅
 - [ ] **1.5** Time tracking page — all time entries, daily/weekly totals, billable toggle
 - [ ] **1.6** New ticket modal — Cmd+N shortcut, quick-create form with client/priority/assignee
 
@@ -54,5 +54,5 @@
 6. Restart: `docker rm -f helixpsa helixpsa-tunnel && docker run ... (see deploy script)`
 
 ## Current Status
-- **Last build:** v0.2 (1.1-1.3 complete)
-- **Next up:** 1.4 (Client page)
+- **Last build:** v0.3 (1.1-1.4 complete)
+- **Next up:** 1.5 (Time tracking page)

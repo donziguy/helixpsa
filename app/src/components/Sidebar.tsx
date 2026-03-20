@@ -1,16 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 const navItems = [
-  { icon: "📊", label: "Dashboard", href: "/", active: false },
-  { icon: "🎫", label: "Tickets", href: "/tickets", active: true },
-  { icon: "👥", label: "Clients", href: "/clients", active: false },
-  { icon: "⏱️", label: "Time", href: "/time", active: false },
-  { icon: "💰", label: "Billing", href: "/billing", active: false },
-  { icon: "📋", label: "Assets", href: "/assets", active: false },
-  { icon: "📅", label: "Schedule", href: "/schedule", active: false },
-  { icon: "📈", label: "Reports", href: "/reports", active: false },
+  { icon: "📊", label: "Dashboard", href: "/" },
+  { icon: "🎫", label: "Tickets", href: "/tickets" },
+  { icon: "👥", label: "Clients", href: "/clients" },
+  { icon: "⏱️", label: "Time", href: "/time" },
+  { icon: "💰", label: "Billing", href: "/billing" },
+  { icon: "📋", label: "Assets", href: "/assets" },
+  { icon: "📅", label: "Schedule", href: "/schedule" },
+  { icon: "📈", label: "Reports", href: "/reports" },
 ];
 
 const bottomItems = [
@@ -20,6 +21,7 @@ const bottomItems = [
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const pathname = usePathname();
 
   return (
     <aside
@@ -56,35 +58,39 @@ export default function Sidebar() {
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "8px", display: "flex", flexDirection: "column", gap: 2 }}>
-        {navItems.map((item) => (
-          <a
-            key={item.label}
-            href={item.href}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: collapsed ? "10px 14px" : "8px 12px",
-              borderRadius: 6,
-              textDecoration: "none",
-              color: item.active ? "var(--text)" : "var(--text-secondary)",
-              background: item.active ? "var(--accent-muted)" : "transparent",
-              fontSize: 14,
-              fontWeight: item.active ? 500 : 400,
-              transition: "all 100ms ease",
-              whiteSpace: "nowrap",
-            }}
-            onMouseEnter={(e) => {
-              if (!item.active) e.currentTarget.style.background = "var(--bg-hover)";
-            }}
-            onMouseLeave={(e) => {
-              if (!item.active) e.currentTarget.style.background = "transparent";
-            }}
-          >
-            <span style={{ fontSize: 16, width: 20, textAlign: "center" }}>{item.icon}</span>
-            {!collapsed && <span>{item.label}</span>}
-          </a>
-        ))}
+        {navItems.map((item) => {
+          const isActive = pathname === item.href || (pathname === "/" && item.href === "/");
+          
+          return (
+            <a
+              key={item.label}
+              href={item.href}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: collapsed ? "10px 14px" : "8px 12px",
+                borderRadius: 6,
+                textDecoration: "none",
+                color: isActive ? "var(--text)" : "var(--text-secondary)",
+                background: isActive ? "var(--accent-muted)" : "transparent",
+                fontSize: 14,
+                fontWeight: isActive ? 500 : 400,
+                transition: "all 100ms ease",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) e.currentTarget.style.background = "var(--bg-hover)";
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <span style={{ fontSize: 16, width: 20, textAlign: "center" }}>{item.icon}</span>
+              {!collapsed && <span>{item.label}</span>}
+            </a>
+          );
+        })}
       </nav>
 
       {/* Bottom nav */}

@@ -21,14 +21,71 @@ export interface Client {
   name: string;
   ticketCount: number;
   monthlyHours: number;
+  contact: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  sla: {
+    tier: string;
+    responseTime: string;
+    health: "good" | "warning" | "breach";
+  };
+  industry: string;
+  onboardDate: string;
 }
 
 export const clients: Client[] = [
-  { id: "c1", name: "Acme Corp", ticketCount: 12, monthlyHours: 45 },
-  { id: "c2", name: "Globex Industries", ticketCount: 8, monthlyHours: 32 },
-  { id: "c3", name: "Wayne Enterprises", ticketCount: 15, monthlyHours: 67 },
-  { id: "c4", name: "Stark Medical", ticketCount: 5, monthlyHours: 18 },
-  { id: "c5", name: "Umbrella Legal", ticketCount: 3, monthlyHours: 12 },
+  { 
+    id: "c1", 
+    name: "Acme Corp", 
+    ticketCount: 12, 
+    monthlyHours: 45,
+    contact: { name: "John Smith", email: "john.smith@acmecorp.com", phone: "(555) 123-4567" },
+    sla: { tier: "Premium", responseTime: "1 hour", health: "warning" },
+    industry: "Manufacturing",
+    onboardDate: "2023-01-15"
+  },
+  { 
+    id: "c2", 
+    name: "Globex Industries", 
+    ticketCount: 8, 
+    monthlyHours: 32,
+    contact: { name: "Sarah Johnson", email: "s.johnson@globex.com", phone: "(555) 234-5678" },
+    sla: { tier: "Standard", responseTime: "4 hours", health: "good" },
+    industry: "Logistics",
+    onboardDate: "2022-08-22"
+  },
+  { 
+    id: "c3", 
+    name: "Wayne Enterprises", 
+    ticketCount: 15, 
+    monthlyHours: 67,
+    contact: { name: "Bruce Wayne", email: "b.wayne@wayneent.com", phone: "(555) 345-6789" },
+    sla: { tier: "Enterprise", responseTime: "30 minutes", health: "good" },
+    industry: "Technology",
+    onboardDate: "2021-12-03"
+  },
+  { 
+    id: "c4", 
+    name: "Stark Medical", 
+    ticketCount: 5, 
+    monthlyHours: 18,
+    contact: { name: "Pepper Potts", email: "p.potts@starkmed.com", phone: "(555) 456-7890" },
+    sla: { tier: "Premium", responseTime: "1 hour", health: "breach" },
+    industry: "Healthcare",
+    onboardDate: "2023-06-10"
+  },
+  { 
+    id: "c5", 
+    name: "Umbrella Legal", 
+    ticketCount: 3, 
+    monthlyHours: 12,
+    contact: { name: "Ada Wong", email: "a.wong@umbrellalegal.com", phone: "(555) 567-8901" },
+    sla: { tier: "Standard", responseTime: "4 hours", health: "good" },
+    industry: "Legal",
+    onboardDate: "2024-01-28"
+  },
 ];
 
 export const tickets: Ticket[] = [
@@ -125,4 +182,10 @@ export const statusConfig: Record<Status, { label: string; color: string; bg: st
   waiting: { label: "Waiting", color: "#a855f7", bg: "rgba(168,85,247,0.15)" },
   resolved: { label: "Resolved", color: "#22c55e", bg: "rgba(34,197,94,0.15)" },
   closed: { label: "Closed", color: "#6b7280", bg: "rgba(107,114,128,0.15)" },
+};
+
+export const slaHealthConfig = {
+  good: { label: "Good", color: "#22c55e", bg: "rgba(34,197,94,0.15)" },
+  warning: { label: "Warning", color: "#f59e0b", bg: "rgba(245,158,11,0.15)" },
+  breach: { label: "Breach", color: "#ef4444", bg: "rgba(239,68,68,0.15)" },
 };
