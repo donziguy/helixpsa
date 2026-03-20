@@ -46,6 +46,11 @@ export default function Home() {
   const handleTicketClick = useCallback((ticket: Ticket) => {
     const fresh = tickets.find(t => t.id === ticket.id);
     setSelectedTicket(fresh || ticket);
+    // Auto-start timer when opening a ticket
+    setTimer((prev) => {
+      if (prev?.ticketId === ticket.id) return prev; // already on this ticket
+      return { ticketId: ticket.id, seconds: 0, running: true };
+    });
   }, [tickets]);
 
   // Keyboard shortcuts
