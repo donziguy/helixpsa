@@ -1,34 +1,84 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
 import TicketBoard from "@/components/TicketBoard";
 import CommandPalette from "@/components/CommandPalette";
+import TicketDetail from "@/components/TicketDetail";
+import { tickets as initialTickets, type Ticket, type Status } from "@/lib/mock-data";
 
 export default function Home() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [tickets, setTickets] = useState<Ticket[]>(initialTickets);
+  const [timer, setTimer] = useState<{ ticketId: string; seconds: number; running: boolean } | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Timer tick
+  useEffect(() => {
+    if (timer?.running) {
+      timerRef.current = setInterval(() => {
+        setTimer((prev) => prev ? { ...prev, seconds: prev.seconds + 1 } : null);
+      }, 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [timer?.running, timer?.ticketId]);
+
+  const handleTimerToggle = useCallback((ticketId: string) => {
+    setTimer((prev) => {
+      if (prev?.ticketId === ticketId && prev.running) {
+        return { ...prev, running: false };
+      }
+      if (prev?.ticketId === ticketId) {
+        return { ...prev, running: true };
+      }
+      return { ticketId, seconds: 0, running: true };
+    });
+  }, []);
+
+  const handleStatusChange = useCallback((ticketId: string, status: Status) => {
+    setTickets((prev) => prev.map((t) => t.id === ticketId ? { ...t, status } : t));
+    setSelectedTicket((prev) => prev?.id === ticketId ? { ...prev, status } : prev);
+  }, []);
+
+  const handleTicketClick = useCallback((ticket: Ticket) => {
+    const fresh = tickets.find(t => t.id === ticket.id);
+    setSelectedTicket(fresh || ticket);
+  }, [tickets]);
+
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K
+      const tag = (e.target as HTMLElement).tagName;
+      const inInput = ["INPUT", "TEXTAREA"].includes(tag);
+
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setCommandPaletteOpen((prev) => !prev);
       }
-      // / to open (when not in input)
-      if (e.key === "/" && !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).tagName)) {
+      if (e.key === "/" && !inInput) {
         e.preventDefault();
         setCommandPaletteOpen(true);
       }
-      // Escape to close
-      if (e.key === "Escape") {
-        setCommandPaletteOpen(false);
+      if (e.key === "n" && !inInput && !commandPaletteOpen) {
+        e.preventDefault();
+        // TODO: open new ticket modal
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [commandPaletteOpen]);
+
+  const formatTime = (s: number) => {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  };
+
+  const activeTicket = timer?.running ? tickets.find(t => t.id === timer.ticketId) : null;
 
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
@@ -39,12 +89,9 @@ export default function Home() {
         <header style={{
           padding: "12px 24px",
           borderBottom: "1px solid var(--border-subtle)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
           flexShrink: 0,
         }}>
-          {/* Search trigger */}
           <button
             onClick={() => setCommandPaletteOpen(true)}
             style={{
@@ -63,31 +110,32 @@ export default function Home() {
             <span style={{ flex: 1, textAlign: "left" }}>Search or press /</span>
             <kbd style={{
               padding: "1px 6px", borderRadius: 4, fontSize: 11,
-              background: "var(--bg)", border: "1px solid var(--border)",
-              color: "var(--text-muted)",
+              background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text-muted)",
             }}>⌘K</kbd>
           </button>
 
-          {/* Right side */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* Active timer indicator */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "6px 12px", borderRadius: 6,
-              background: "rgba(34,197,94,0.1)",
-              border: "1px solid rgba(34,197,94,0.2)",
-              fontSize: 13, color: "#22c55e", fontWeight: 500,
-            }}>
-              <span style={{
-                width: 8, height: 8, borderRadius: "50%",
-                background: "#22c55e",
-                animation: "pulse 2s infinite",
-              }} />
-              <span>HLX-005</span>
-              <span style={{ fontFamily: "monospace" }}>0:40:12</span>
-            </div>
-
-            {/* Notifications */}
+            {/* Active timer */}
+            {activeTicket && timer && (
+              <div
+                onClick={() => handleTicketClick(activeTicket)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "6px 12px", borderRadius: 6,
+                  background: "rgba(34,197,94,0.1)",
+                  border: "1px solid rgba(34,197,94,0.2)",
+                  fontSize: 13, color: "#22c55e", fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{
+                  width: 8, height: 8, borderRadius: "50%",
+                  background: "#22c55e", animation: "pulse 2s infinite",
+                }} />
+                <span>{activeTicket.number}</span>
+                <span style={{ fontFamily: "monospace" }}>{formatTime(timer.seconds)}</span>
+              </div>
+            )}
             <button style={{
               position: "relative",
               background: "none", border: "none", cursor: "pointer",
@@ -103,13 +151,25 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Content */}
         <div style={{ flex: 1, padding: 24, overflow: "auto" }}>
-          <TicketBoard />
+          <TicketBoard
+            tickets={tickets}
+            onTicketClick={handleTicketClick}
+            onStatusChange={handleStatusChange}
+            timer={timer}
+          />
         </div>
       </main>
 
       <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
+
+      <TicketDetail
+        ticket={selectedTicket}
+        onClose={() => setSelectedTicket(null)}
+        onStatusChange={handleStatusChange}
+        timer={timer}
+        onTimerToggle={handleTimerToggle}
+      />
 
       <style>{`
         @keyframes pulse {
