@@ -1,4 +1,4 @@
-# 🚀 PSA — Professional Services Automation for MSPs
+# 🧬 HelixPSA — Professional Services Automation for MSPs
 
 > What if Linear.app had a baby with ConnectWise, and the baby was raised by someone who actually runs an MSP?
 
