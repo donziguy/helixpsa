@@ -1,0 +1,128 @@
+export type Priority = "critical" | "high" | "medium" | "low";
+export type Status = "open" | "in_progress" | "waiting" | "resolved" | "closed";
+
+export interface Ticket {
+  id: string;
+  number: string;
+  title: string;
+  client: string;
+  assignee: string;
+  priority: Priority;
+  status: Status;
+  sla: string;
+  created: string;
+  updated: string;
+  description: string;
+  timeSpent: number; // minutes
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  ticketCount: number;
+  monthlyHours: number;
+}
+
+export const clients: Client[] = [
+  { id: "c1", name: "Acme Corp", ticketCount: 12, monthlyHours: 45 },
+  { id: "c2", name: "Globex Industries", ticketCount: 8, monthlyHours: 32 },
+  { id: "c3", name: "Wayne Enterprises", ticketCount: 15, monthlyHours: 67 },
+  { id: "c4", name: "Stark Medical", ticketCount: 5, monthlyHours: 18 },
+  { id: "c5", name: "Umbrella Legal", ticketCount: 3, monthlyHours: 12 },
+];
+
+export const tickets: Ticket[] = [
+  {
+    id: "t1", number: "HLX-001", title: "Exchange server not syncing emails",
+    client: "Acme Corp", assignee: "Mike T.", priority: "critical", status: "in_progress",
+    sla: "1h remaining", created: "2h ago", updated: "15m ago",
+    description: "Users reporting emails stuck in outbox since 9am. Exchange 2019 on-prem.",
+    timeSpent: 45
+  },
+  {
+    id: "t2", number: "HLX-002", title: "New employee onboarding - Sarah Chen",
+    client: "Globex Industries", assignee: "Jake R.", priority: "medium", status: "open",
+    sla: "4h remaining", created: "3h ago", updated: "3h ago",
+    description: "New hire starting Monday. Need M365 license, laptop setup, AD account.",
+    timeSpent: 0
+  },
+  {
+    id: "t3", number: "HLX-003", title: "Firewall rule change request",
+    client: "Wayne Enterprises", assignee: "Cory S.", priority: "high", status: "waiting",
+    sla: "2h remaining", created: "1d ago", updated: "4h ago",
+    description: "Need to open port 8443 for new VPN appliance. Change window approved for tonight.",
+    timeSpent: 30
+  },
+  {
+    id: "t4", number: "HLX-004", title: "Printer offline on 3rd floor",
+    client: "Acme Corp", assignee: "Mike T.", priority: "low", status: "open",
+    sla: "8h remaining", created: "5h ago", updated: "5h ago",
+    description: "HP LaserJet in conference room showing offline. Users printing to 2nd floor instead.",
+    timeSpent: 0
+  },
+  {
+    id: "t5", number: "HLX-005", title: "Ransomware alert - endpoint quarantined",
+    client: "Stark Medical", assignee: "Cory S.", priority: "critical", status: "in_progress",
+    sla: "30m remaining", created: "45m ago", updated: "5m ago",
+    description: "SentinelOne flagged suspicious process on WORKSTATION-042. Machine isolated. Investigating.",
+    timeSpent: 40
+  },
+  {
+    id: "t6", number: "HLX-006", title: "VPN disconnecting intermittently",
+    client: "Umbrella Legal", assignee: "Jake R.", priority: "high", status: "in_progress",
+    sla: "3h remaining", created: "6h ago", updated: "1h ago",
+    description: "3 remote users dropping VPN every 15-20 min. FortiClient on Windows 11.",
+    timeSpent: 90
+  },
+  {
+    id: "t7", number: "HLX-007", title: "Azure AD conditional access policy review",
+    client: "Wayne Enterprises", assignee: "Cory S.", priority: "medium", status: "open",
+    sla: "24h remaining", created: "1d ago", updated: "1d ago",
+    description: "Annual review of conditional access policies. Check MFA enrollment and compliant device requirements.",
+    timeSpent: 0
+  },
+  {
+    id: "t8", number: "HLX-008", title: "Backup job failed - SQL server",
+    client: "Globex Industries", assignee: "Mike T.", priority: "high", status: "waiting",
+    sla: "6h remaining", created: "8h ago", updated: "2h ago",
+    description: "Veeam backup of SQL-PROD-01 failed with insufficient space. Waiting on storage approval.",
+    timeSpent: 25
+  },
+  {
+    id: "t9", number: "HLX-009", title: "Teams meeting room display not working",
+    client: "Acme Corp", assignee: "Jake R.", priority: "low", status: "resolved",
+    sla: "Completed", created: "2d ago", updated: "4h ago",
+    description: "Board room Teams display showing black screen. Power cycled, updated firmware.",
+    timeSpent: 35
+  },
+  {
+    id: "t10", number: "HLX-010", title: "SSL certificate expiring in 7 days",
+    client: "Stark Medical", assignee: "Cory S.", priority: "medium", status: "open",
+    sla: "48h remaining", created: "1d ago", updated: "1d ago",
+    description: "Wildcard cert for *.starkmedical.com expiring 3/27. Need to renew and deploy.",
+    timeSpent: 0
+  },
+];
+
+export const statusLabels: Record<Status, string> = {
+  open: "Open",
+  in_progress: "In Progress",
+  waiting: "Waiting",
+  resolved: "Resolved",
+  closed: "Closed",
+};
+
+export const priorityConfig: Record<Priority, { label: string; color: string; bg: string }> = {
+  critical: { label: "Critical", color: "#ef4444", bg: "rgba(239,68,68,0.15)" },
+  high: { label: "High", color: "#f59e0b", bg: "rgba(245,158,11,0.15)" },
+  medium: { label: "Medium", color: "#3b82f6", bg: "rgba(59,130,246,0.15)" },
+  low: { label: "Low", color: "#6b7280", bg: "rgba(107,114,128,0.15)" },
+};
+
+export const statusConfig: Record<Status, { label: string; color: string; bg: string }> = {
+  open: { label: "Open", color: "#3b82f6", bg: "rgba(59,130,246,0.15)" },
+  in_progress: { label: "In Progress", color: "#f59e0b", bg: "rgba(245,158,11,0.15)" },
+  waiting: { label: "Waiting", color: "#a855f7", bg: "rgba(168,85,247,0.15)" },
+  resolved: { label: "Resolved", color: "#22c55e", bg: "rgba(34,197,94,0.15)" },
+  closed: { label: "Closed", color: "#6b7280", bg: "rgba(107,114,128,0.15)" },
+};
