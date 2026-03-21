@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { priorityConfig, statusConfig, type Ticket, type Status, type Priority } from "@/lib/mock-data";
 import InlineEdit from "./InlineEdit";
+import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
 
 interface TicketBoardProps {
   tickets: Ticket[];
@@ -12,16 +13,19 @@ interface TicketBoardProps {
   timer: { ticketId: string; seconds: number; running: boolean } | null;
 }
 
-function TicketCard({ ticket, onClick, isDragging, timer, onUpdate }: {
+function TicketCard({ ticket, onClick, isDragging, timer, onUpdate, isSelected, cardRef }: {
   ticket: Ticket; onClick: () => void; isDragging: boolean;
   timer: { ticketId: string; seconds: number; running: boolean } | null;
   onUpdate: (ticketId: string, updates: Partial<Ticket>) => void;
+  isSelected?: boolean;
+  cardRef?: (el: HTMLDivElement | null) => void;
 }) {
   const priority = priorityConfig[ticket.priority];
   const isTimerActive = timer?.ticketId === ticket.id && timer.running;
 
   return (
     <div
+      ref={cardRef}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData("ticketId", ticket.id);
@@ -31,23 +35,37 @@ function TicketCard({ ticket, onClick, isDragging, timer, onUpdate }: {
       onDragEnd={(e) => { (e.target as HTMLElement).style.opacity = "1"; }}
       onClick={onClick}
       style={{
-        background: isTimerActive ? "rgba(34,197,94,0.05)" : "var(--bg-secondary)",
-        border: `1px solid ${isTimerActive ? "rgba(34,197,94,0.2)" : "var(--border-subtle)"}`,
+        background: isSelected ? "var(--accent-muted)" : (isTimerActive ? "rgba(34,197,94,0.05)" : "var(--bg-secondary)"),
+        borderTop: `2px solid ${isSelected ? "var(--accent)" : (isTimerActive ? "rgba(34,197,94,0.2)" : "var(--border-subtle)")}`,
+        borderRight: `2px solid ${isSelected ? "var(--accent)" : (isTimerActive ? "rgba(34,197,94,0.2)" : "var(--border-subtle)")}`,
+        borderBottom: `2px solid ${isSelected ? "var(--accent)" : (isTimerActive ? "rgba(34,197,94,0.2)" : "var(--border-subtle)")}`,
+        borderLeft: `3px solid ${priority.color}`,
         borderRadius: 8,
         padding: "12px 14px",
         cursor: "pointer",
         transition: "all 100ms ease",
-        borderLeft: `3px solid ${priority.color}`,
         opacity: isDragging ? 0.5 : 1,
+        outline: isSelected ? "2px solid var(--accent)" : "none",
+        outlineOffset: isSelected ? "2px" : "0",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "var(--border)";
-        e.currentTarget.style.background = isTimerActive ? "rgba(34,197,94,0.08)" : "var(--bg-tertiary)";
+        if (!isSelected) {
+          const borderColor = "var(--border)";
+          e.currentTarget.style.borderTopColor = borderColor;
+          e.currentTarget.style.borderRightColor = borderColor;
+          e.currentTarget.style.borderBottomColor = borderColor;
+          e.currentTarget.style.background = isTimerActive ? "rgba(34,197,94,0.08)" : "var(--bg-tertiary)";
+        }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = isTimerActive ? "rgba(34,197,94,0.2)" : "var(--border-subtle)";
-        e.currentTarget.style.borderLeftColor = priority.color;
-        e.currentTarget.style.background = isTimerActive ? "rgba(34,197,94,0.05)" : "var(--bg-secondary)";
+        if (!isSelected) {
+          const borderColor = isTimerActive ? "rgba(34,197,94,0.2)" : "var(--border-subtle)";
+          e.currentTarget.style.borderTopColor = borderColor;
+          e.currentTarget.style.borderRightColor = borderColor;
+          e.currentTarget.style.borderBottomColor = borderColor;
+          e.currentTarget.style.borderLeftColor = priority.color;
+          e.currentTarget.style.background = isTimerActive ? "rgba(34,197,94,0.05)" : "var(--bg-secondary)";
+        }
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
@@ -114,6 +132,7 @@ const columns: { status: Status; label: string }[] = [
 export default function TicketBoard({ tickets, onTicketClick, onStatusChange, onTicketUpdate, timer }: TicketBoardProps) {
   const [view, setView] = useState<"board" | "list">("board");
   const [dragOverColumn, setDragOverColumn] = useState<Status | null>(null);
+  const ticketRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
   
   // Filter and search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -158,6 +177,29 @@ export default function TicketBoard({ tickets, onTicketClick, onStatusChange, on
     return true;
   });
 
+  // Keyboard navigation
+  const navigationItems = filteredTickets.map(ticket => ({
+    id: ticket.id,
+    element: ticketRefs.current.get(ticket.id)
+  }));
+
+  const { selectedIndex, selectIndex, clearSelection } = useKeyboardNavigation({
+    items: navigationItems,
+    onSelect: (item) => {
+      const ticket = filteredTickets.find(t => t.id === item.id);
+      if (ticket) onTicketClick(ticket);
+    },
+    disabled: false // Enable keyboard navigation
+  });
+
+  const setTicketRef = (ticketId: string) => (el: HTMLDivElement | null) => {
+    if (el) {
+      ticketRefs.current.set(ticketId, el);
+    } else {
+      ticketRefs.current.delete(ticketId);
+    }
+  };
+
   const handleDrop = (e: React.DragEvent, targetStatus: Status) => {
     e.preventDefault();
     const ticketId = e.dataTransfer.getData("ticketId");
@@ -199,7 +241,14 @@ export default function TicketBoard({ tickets, onTicketClick, onStatusChange, on
       />
 
       {view === "list" ? (
-        <TicketList tickets={filteredTickets} onTicketClick={onTicketClick} onUpdate={onTicketUpdate} timer={timer} />
+        <TicketList 
+          tickets={filteredTickets} 
+          onTicketClick={onTicketClick} 
+          onUpdate={onTicketUpdate} 
+          timer={timer}
+          selectedIndex={selectedIndex}
+          setTicketRef={setTicketRef}
+        />
       ) : (
         <div style={{
           display: "grid",
@@ -243,16 +292,21 @@ export default function TicketBoard({ tickets, onTicketClick, onStatusChange, on
                   }}>+</button>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, minHeight: 60 }}>
-                  {colTickets.map((ticket) => (
-                    <TicketCard
-                      key={ticket.id}
-                      ticket={ticket}
-                      onClick={() => onTicketClick(ticket)}
-                      isDragging={false}
-                      timer={timer}
-                      onUpdate={onTicketUpdate}
-                    />
-                  ))}
+                  {colTickets.map((ticket, index) => {
+                    const ticketIndex = filteredTickets.findIndex(t => t.id === ticket.id);
+                    return (
+                      <TicketCard
+                        key={ticket.id}
+                        ticket={ticket}
+                        onClick={() => onTicketClick(ticket)}
+                        isDragging={false}
+                        timer={timer}
+                        onUpdate={onTicketUpdate}
+                        isSelected={selectedIndex === ticketIndex}
+                        cardRef={setTicketRef(ticket.id)}
+                      />
+                    );
+                  })}
                   {colTickets.length === 0 && isOver && (
                     <div style={{
                       padding: 20, borderRadius: 8,
@@ -322,10 +376,12 @@ function BoardHeader({ view, setView, ticketCount, totalTicketCount, clientCount
   );
 }
 
-function TicketList({ tickets, onTicketClick, onUpdate, timer }: {
+function TicketList({ tickets, onTicketClick, onUpdate, timer, selectedIndex, setTicketRef }: {
   tickets: Ticket[]; onTicketClick: (t: Ticket) => void;
   onUpdate: (ticketId: string, updates: Partial<Ticket>) => void;
   timer: { ticketId: string; seconds: number; running: boolean } | null;
+  selectedIndex?: number;
+  setTicketRef?: (ticketId: string) => (el: HTMLDivElement | null) => void;
 }) {
   return (
     <div style={{
@@ -341,24 +397,39 @@ function TicketList({ tickets, onTicketClick, onUpdate, timer }: {
         <span>ID</span><span>Title</span><span>Client</span><span>Assignee</span>
         <span>Priority</span><span>Time</span><span>SLA</span>
       </div>
-      {tickets.map((ticket) => {
+      {tickets.map((ticket, index) => {
         const priority = priorityConfig[ticket.priority];
         const status = statusConfig[ticket.status];
         const isTimerActive = timer?.ticketId === ticket.id && timer.running;
+        const isSelected = selectedIndex === index;
         return (
           <div
             key={ticket.id}
+            ref={setTicketRef ? setTicketRef(ticket.id) : undefined}
             onClick={() => onTicketClick(ticket)}
             style={{
               display: "grid",
               gridTemplateColumns: "80px 1fr 140px 100px 90px 80px 100px",
-              padding: "10px 16px", borderBottom: "1px solid var(--border-subtle)",
-              fontSize: 13, cursor: "pointer", transition: "background 50ms ease",
+              padding: "10px 16px", 
+              borderBottom: "1px solid var(--border-subtle)",
+              borderLeft: isSelected ? "3px solid var(--accent)" : "3px solid transparent",
+              fontSize: 13, cursor: "pointer", transition: "all 50ms ease",
               alignItems: "center",
-              background: isTimerActive ? "rgba(34,197,94,0.05)" : "transparent",
+              background: isSelected ? "var(--accent-muted)" : 
+                         (isTimerActive ? "rgba(34,197,94,0.05)" : "transparent"),
+              outline: isSelected ? "2px solid var(--accent)" : "none",
+              outlineOffset: isSelected ? "-2px" : "0",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = isTimerActive ? "rgba(34,197,94,0.08)" : "var(--bg-hover)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = isTimerActive ? "rgba(34,197,94,0.05)" : "transparent"; }}
+            onMouseEnter={(e) => { 
+              if (!isSelected) {
+                e.currentTarget.style.background = isTimerActive ? "rgba(34,197,94,0.08)" : "var(--bg-hover)"; 
+              }
+            }}
+            onMouseLeave={(e) => { 
+              if (!isSelected) {
+                e.currentTarget.style.background = isTimerActive ? "rgba(34,197,94,0.05)" : "transparent"; 
+              }
+            }}
           >
             <span style={{ fontFamily: "monospace", color: "var(--accent)", fontSize: 12 }}>{ticket.number}</span>
             <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>

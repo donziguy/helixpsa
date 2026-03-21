@@ -175,6 +175,18 @@ export default function TicketsPage() {
             }}>⌘K</kbd>
           </button>
 
+          {/* Keyboard shortcuts hint */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6,
+            fontSize: 12, color: "var(--text-muted)",
+            padding: "4px 8px", borderRadius: 4,
+            background: "var(--bg-tertiary)",
+            border: "1px solid var(--border-subtle)"
+          }}>
+            <span>💡</span>
+            <span>j/k navigate • Enter select • ⌘N new</span>
+          </div>
+
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {/* Active timer */}
             {activeTicket && timer && (

@@ -22,7 +22,7 @@
 - [x] **2.2** Ticket filters & search — filter by client, assignee, priority, status ✅
 - [x] **2.3** Dashboard page — stats cards (open tickets, SLA breaches, hours today, revenue) ✅
 - [x] **2.4** Toast notifications — success/error feedback on actions ✅
-- [ ] **2.5** Keyboard navigation — j/k to move between tickets, Enter to open, arrow keys in Kanban
+- [x] **2.5** Keyboard navigation — j/k to move between tickets, Enter to open, arrow keys in Kanban ✅
 
 ### Phase 3 — Data & Auth (Sprint 3)
 - [ ] **3.1** PostgreSQL + Drizzle ORM schema (tickets, clients, users, time_entries, notes)
@@ -54,5 +54,5 @@
 6. Restart: `docker rm -f helixpsa helixpsa-tunnel && docker run ... (see deploy script)`
 
 ## Current Status
-- **Last build:** v0.7 (2.4 complete — Toast notifications system fully implemented)
-- **Next up:** 2.5 (Keyboard navigation — j/k to move between tickets, Enter to open, arrow keys in Kanban)
+- **Last build:** v0.8 (2.5 complete — Keyboard navigation fully implemented)
+- **Next up:** 3.1 (PostgreSQL + Drizzle ORM schema for tickets, clients, users, time_entries, notes)
