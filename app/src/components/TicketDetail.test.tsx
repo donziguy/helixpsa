@@ -10,6 +10,7 @@ describe('TicketDetail', () => {
     ticket,
     onClose: vi.fn(),
     onStatusChange: vi.fn(),
+    onTicketUpdate: vi.fn(),
     timer: null,
     onTimerToggle: vi.fn(),
   });
@@ -104,5 +105,57 @@ describe('TicketDetail', () => {
     const props = makeProps();
     render(<TicketDetail {...props} />);
     expect(screen.getAllByText(/SLA:/).length).toBeGreaterThan(0);
+  });
+
+  it('allows inline editing of ticket title', async () => {
+    const props = makeProps();
+    render(<TicketDetail {...props} />);
+    
+    // Find the InlineEdit span for the title - look for exact title with click-to-edit tooltip
+    const titleSpans = document.querySelectorAll('span[title="Click to edit"]');
+    const titleSpan = Array.from(titleSpans).find(span => 
+      span.textContent?.includes(ticket.title)
+    );
+    
+    expect(titleSpan).toBeTruthy();
+    
+    // Click the span to enter edit mode
+    fireEvent.click(titleSpan!);
+    
+    // Should show an input
+    const input = screen.getByDisplayValue(ticket.title) as HTMLInputElement;
+    expect(input).toBeTruthy();
+    
+    // Change the value and save
+    fireEvent.change(input, { target: { value: 'New Title' } });
+    fireEvent.blur(input);
+    
+    expect(props.onTicketUpdate).toHaveBeenCalledWith(ticket.id, { title: 'New Title' });
+  });
+
+  it('allows inline editing of ticket description', async () => {
+    const props = makeProps();
+    render(<TicketDetail {...props} />);
+    
+    // Find the InlineEdit span for the description
+    const descSpans = document.querySelectorAll('span[title="Click to edit"]');
+    const descSpan = Array.from(descSpans).find(span => 
+      span.textContent?.includes(ticket.description)
+    );
+    
+    expect(descSpan).toBeTruthy();
+    
+    // Click the span to enter edit mode
+    fireEvent.click(descSpan!);
+    
+    // Should show a textarea
+    const textarea = screen.getByDisplayValue(ticket.description) as HTMLTextAreaElement;
+    expect(textarea).toBeTruthy();
+    
+    // Change the value and save
+    fireEvent.change(textarea, { target: { value: 'New description' } });
+    fireEvent.blur(textarea);
+    
+    expect(props.onTicketUpdate).toHaveBeenCalledWith(ticket.id, { description: 'New description' });
   });
 });

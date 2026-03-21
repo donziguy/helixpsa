@@ -1,18 +1,21 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { priorityConfig, statusConfig, type Ticket, type Status } from "@/lib/mock-data";
+import { priorityConfig, statusConfig, type Ticket, type Status, type Priority } from "@/lib/mock-data";
+import InlineEdit from "./InlineEdit";
 
 interface TicketBoardProps {
   tickets: Ticket[];
   onTicketClick: (ticket: Ticket) => void;
   onStatusChange: (ticketId: string, status: Status) => void;
+  onTicketUpdate: (ticketId: string, updates: Partial<Ticket>) => void;
   timer: { ticketId: string; seconds: number; running: boolean } | null;
 }
 
-function TicketCard({ ticket, onClick, isDragging, timer }: {
+function TicketCard({ ticket, onClick, isDragging, timer, onUpdate }: {
   ticket: Ticket; onClick: () => void; isDragging: boolean;
   timer: { ticketId: string; seconds: number; running: boolean } | null;
+  onUpdate: (ticketId: string, updates: Partial<Ticket>) => void;
 }) {
   const priority = priorityConfig[ticket.priority];
   const isTimerActive = timer?.ticketId === ticket.id && timer.running;
@@ -52,13 +55,26 @@ function TicketCard({ ticket, onClick, isDragging, timer }: {
           <span style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "monospace" }}>{ticket.number}</span>
           {isTimerActive && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", animation: "pulse 2s infinite" }} />}
         </div>
-        <span style={{
-          fontSize: 11, padding: "2px 8px", borderRadius: 99,
-          background: priority.bg, color: priority.color, fontWeight: 500,
-        }}>{priority.label}</span>
+        <InlineEdit
+          value={ticket.priority}
+          onSave={(newPriority) => onUpdate(ticket.id, { priority: newPriority as Priority })}
+          selectOptions={Object.entries(priorityConfig).map(([value, config]) => ({
+            value,
+            label: config.label,
+          }))}
+          style={{
+            fontSize: 11, padding: "2px 8px", borderRadius: 99,
+            background: priority.bg, color: priority.color, fontWeight: 500,
+            border: "none", display: "inline-block", minWidth: "auto",
+          }}
+        />
       </div>
       <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text)", marginBottom: 8, lineHeight: 1.4 }}>
-        {ticket.title}
+        <InlineEdit
+          value={ticket.title}
+          onSave={(newTitle) => onUpdate(ticket.id, { title: newTitle })}
+          style={{ fontSize: 14, fontWeight: 500, color: "var(--text)", lineHeight: 1.4 }}
+        />
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 12 }}>
         <span style={{ color: "var(--text-secondary)" }}>{ticket.client}</span>
@@ -95,9 +111,52 @@ const columns: { status: Status; label: string }[] = [
   { status: "resolved", label: "Resolved" },
 ];
 
-export default function TicketBoard({ tickets, onTicketClick, onStatusChange, timer }: TicketBoardProps) {
+export default function TicketBoard({ tickets, onTicketClick, onStatusChange, onTicketUpdate, timer }: TicketBoardProps) {
   const [view, setView] = useState<"board" | "list">("board");
   const [dragOverColumn, setDragOverColumn] = useState<Status | null>(null);
+  
+  // Filter and search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedClient, setSelectedClient] = useState("");
+  const [selectedAssignee, setSelectedAssignee] = useState("");
+  const [selectedPriority, setSelectedPriority] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  
+  // Get unique values for filters
+  const allClients = [...new Set(tickets.map(t => t.client))].sort();
+  const allAssignees = [...new Set(tickets.map(t => t.assignee))].sort();
+  const allPriorities = Object.keys(priorityConfig);
+  const allStatuses = Object.keys(statusConfig);
+  
+  // Filter tickets based on search and filters
+  const filteredTickets = tickets.filter(ticket => {
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        ticket.title.toLowerCase().includes(query) ||
+        ticket.number.toLowerCase().includes(query) ||
+        ticket.client.toLowerCase().includes(query) ||
+        ticket.assignee.toLowerCase().includes(query) ||
+        ticket.description.toLowerCase().includes(query);
+      
+      if (!matchesSearch) return false;
+    }
+    
+    // Client filter
+    if (selectedClient && ticket.client !== selectedClient) return false;
+    
+    // Assignee filter
+    if (selectedAssignee && ticket.assignee !== selectedAssignee) return false;
+    
+    // Priority filter
+    if (selectedPriority && ticket.priority !== selectedPriority) return false;
+    
+    // Status filter
+    if (selectedStatus && ticket.status !== selectedStatus) return false;
+    
+    return true;
+  });
 
   const handleDrop = (e: React.DragEvent, targetStatus: Status) => {
     e.preventDefault();
@@ -114,10 +173,33 @@ export default function TicketBoard({ tickets, onTicketClick, onStatusChange, ti
 
   return (
     <div>
-      <BoardHeader view={view} setView={setView} ticketCount={tickets.length} clientCount={new Set(tickets.map(t => t.client)).size} />
+      <BoardHeader 
+        view={view} 
+        setView={setView} 
+        ticketCount={filteredTickets.length} 
+        totalTicketCount={tickets.length}
+        clientCount={new Set(filteredTickets.map(t => t.client)).size}
+      />
+      
+      <FiltersAndSearch
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        selectedClient={selectedClient}
+        setSelectedClient={setSelectedClient}
+        selectedAssignee={selectedAssignee}
+        setSelectedAssignee={setSelectedAssignee}
+        selectedPriority={selectedPriority}
+        setSelectedPriority={setSelectedPriority}
+        selectedStatus={selectedStatus}
+        setSelectedStatus={setSelectedStatus}
+        allClients={allClients}
+        allAssignees={allAssignees}
+        allPriorities={allPriorities}
+        allStatuses={allStatuses}
+      />
 
       {view === "list" ? (
-        <TicketList tickets={tickets} onTicketClick={onTicketClick} timer={timer} />
+        <TicketList tickets={filteredTickets} onTicketClick={onTicketClick} onUpdate={onTicketUpdate} timer={timer} />
       ) : (
         <div style={{
           display: "grid",
@@ -126,7 +208,7 @@ export default function TicketBoard({ tickets, onTicketClick, onStatusChange, ti
           minHeight: "calc(100vh - 160px)",
         }}>
           {columns.map((col) => {
-            const colTickets = tickets.filter((t) => t.status === col.status);
+            const colTickets = filteredTickets.filter((t) => t.status === col.status);
             const sc = statusConfig[col.status];
             const isOver = dragOverColumn === col.status;
             return (
@@ -168,6 +250,7 @@ export default function TicketBoard({ tickets, onTicketClick, onStatusChange, ti
                       onClick={() => onTicketClick(ticket)}
                       isDragging={false}
                       timer={timer}
+                      onUpdate={onTicketUpdate}
                     />
                   ))}
                   {colTickets.length === 0 && isOver && (
@@ -195,16 +278,19 @@ export default function TicketBoard({ tickets, onTicketClick, onStatusChange, ti
   );
 }
 
-function BoardHeader({ view, setView, ticketCount, clientCount }: {
+function BoardHeader({ view, setView, ticketCount, totalTicketCount, clientCount }: {
   view: string; setView: (v: "board" | "list") => void;
-  ticketCount: number; clientCount: number;
+  ticketCount: number; totalTicketCount: number; clientCount: number;
 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
       <div>
         <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em" }}>Tickets</h1>
         <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>
-          {ticketCount} active tickets across {clientCount} clients
+          {ticketCount === totalTicketCount 
+            ? `${ticketCount} active tickets across ${clientCount} clients`
+            : `${ticketCount} of ${totalTicketCount} tickets showing`
+          }
         </p>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -236,8 +322,9 @@ function BoardHeader({ view, setView, ticketCount, clientCount }: {
   );
 }
 
-function TicketList({ tickets, onTicketClick, timer }: {
+function TicketList({ tickets, onTicketClick, onUpdate, timer }: {
   tickets: Ticket[]; onTicketClick: (t: Ticket) => void;
+  onUpdate: (ticketId: string, updates: Partial<Ticket>) => void;
   timer: { ticketId: string; seconds: number; running: boolean } | null;
 }) {
   return (
@@ -276,15 +363,30 @@ function TicketList({ tickets, onTicketClick, timer }: {
             <span style={{ fontFamily: "monospace", color: "var(--accent)", fontSize: 12 }}>{ticket.number}</span>
             <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: status.color, flexShrink: 0 }} />
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ticket.title}</span>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+                <InlineEdit
+                  value={ticket.title}
+                  onSave={(newTitle) => onUpdate(ticket.id, { title: newTitle })}
+                  style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}
+                />
+              </span>
               {isTimerActive && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", animation: "pulse 2s infinite", flexShrink: 0 }} />}
             </div>
             <span style={{ color: "var(--text-secondary)" }}>{ticket.client}</span>
             <span style={{ color: "var(--text-secondary)" }}>{ticket.assignee}</span>
-            <span style={{
-              fontSize: 11, padding: "2px 8px", borderRadius: 99,
-              background: priority.bg, color: priority.color, fontWeight: 500, textAlign: "center",
-            }}>{priority.label}</span>
+            <InlineEdit
+              value={ticket.priority}
+              onSave={(newPriority) => onUpdate(ticket.id, { priority: newPriority as Priority })}
+              selectOptions={Object.entries(priorityConfig).map(([value, config]) => ({
+                value,
+                label: config.label,
+              }))}
+              style={{
+                fontSize: 11, padding: "2px 8px", borderRadius: 99,
+                background: priority.bg, color: priority.color, fontWeight: 500,
+                textAlign: "center", border: "none", display: "inline-block", minWidth: "auto",
+              }}
+            />
             <span style={{ color: "var(--text-muted)" }}>{ticket.timeSpent > 0 ? `${ticket.timeSpent}m` : "—"}</span>
             <span style={{
               fontSize: 12,
@@ -293,6 +395,160 @@ function TicketList({ tickets, onTicketClick, timer }: {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function FiltersAndSearch({
+  searchQuery, setSearchQuery,
+  selectedClient, setSelectedClient,
+  selectedAssignee, setSelectedAssignee,
+  selectedPriority, setSelectedPriority,
+  selectedStatus, setSelectedStatus,
+  allClients, allAssignees, allPriorities, allStatuses
+}: {
+  searchQuery: string; setSearchQuery: (q: string) => void;
+  selectedClient: string; setSelectedClient: (c: string) => void;
+  selectedAssignee: string; setSelectedAssignee: (a: string) => void;
+  selectedPriority: string; setSelectedPriority: (p: string) => void;
+  selectedStatus: string; setSelectedStatus: (s: string) => void;
+  allClients: string[]; allAssignees: string[];
+  allPriorities: string[]; allStatuses: string[];
+}) {
+  const hasFilters = searchQuery || selectedClient || selectedAssignee || selectedPriority || selectedStatus;
+  
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedClient("");
+    setSelectedAssignee("");
+    setSelectedPriority("");
+    setSelectedStatus("");
+  };
+
+  return (
+    <div style={{ 
+      marginBottom: 16,
+      padding: "16px",
+      background: "var(--bg-secondary)",
+      borderRadius: 8,
+      border: "1px solid var(--border-subtle)"
+    }}>
+      {/* Search Bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+        <div style={{ position: "relative", flex: 1, maxWidth: 400 }}>
+          <input
+            type="text"
+            placeholder="Search tickets, clients, assignees..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "8px 12px 8px 36px",
+              borderRadius: 6,
+              border: "1px solid var(--border-subtle)",
+              background: "var(--bg-tertiary)",
+              fontSize: 14,
+              color: "var(--text)",
+              fontFamily: "inherit",
+              outline: "none",
+            }}
+          />
+          <span style={{
+            position: "absolute",
+            left: 12,
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: "var(--text-muted)",
+            fontSize: 14,
+          }}>🔍</span>
+        </div>
+        
+        {hasFilters && (
+          <button
+            onClick={clearFilters}
+            style={{
+              padding: "8px 12px",
+              fontSize: 13,
+              border: "1px solid var(--border-subtle)",
+              borderRadius: 6,
+              background: "var(--bg-tertiary)",
+              color: "var(--text-muted)",
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+      
+      {/* Filter Dropdowns */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <FilterSelect
+          label="Client"
+          value={selectedClient}
+          onChange={setSelectedClient}
+          options={allClients}
+        />
+        
+        <FilterSelect
+          label="Assignee"
+          value={selectedAssignee}
+          onChange={setSelectedAssignee}
+          options={allAssignees}
+        />
+        
+        <FilterSelect
+          label="Priority"
+          value={selectedPriority}
+          onChange={setSelectedPriority}
+          options={allPriorities}
+          optionLabels={allPriorities.map(p => priorityConfig[p as Priority]?.label || p)}
+        />
+        
+        <FilterSelect
+          label="Status"
+          value={selectedStatus}
+          onChange={setSelectedStatus}
+          options={allStatuses}
+          optionLabels={allStatuses.map(s => statusConfig[s as Status]?.label || s)}
+        />
+      </div>
+    </div>
+  );
+}
+
+function FilterSelect({ label, value, onChange, options, optionLabels }: {
+  label: string; value: string; onChange: (v: string) => void;
+  options: string[]; optionLabels?: string[];
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 500, minWidth: "fit-content" }}>
+        {label}:
+      </span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          padding: "6px 8px",
+          fontSize: 13,
+          border: "1px solid var(--border-subtle)",
+          borderRadius: 4,
+          background: "var(--bg-tertiary)",
+          color: "var(--text)",
+          fontFamily: "inherit",
+          outline: "none",
+          minWidth: 120,
+        }}
+      >
+        <option value="">All</option>
+        {options.map((option, index) => (
+          <option key={option} value={option}>
+            {optionLabels ? optionLabels[index] : option}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

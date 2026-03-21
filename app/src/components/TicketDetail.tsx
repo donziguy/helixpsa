@@ -1,17 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { type Ticket, priorityConfig, statusConfig } from "@/lib/mock-data";
+import { type Ticket, priorityConfig, statusConfig, type Priority } from "@/lib/mock-data";
+import InlineEdit from "./InlineEdit";
 
 interface TicketDetailProps {
   ticket: Ticket | null;
   onClose: () => void;
   onStatusChange: (ticketId: string, status: Ticket["status"]) => void;
+  onTicketUpdate: (ticketId: string, updates: Partial<Ticket>) => void;
   timer: { ticketId: string; seconds: number; running: boolean } | null;
   onTimerToggle: (ticketId: string) => void;
 }
 
-export default function TicketDetail({ ticket, onClose, onStatusChange, timer, onTimerToggle }: TicketDetailProps) {
+export default function TicketDetail({ ticket, onClose, onStatusChange, onTicketUpdate, timer, onTimerToggle }: TicketDetailProps) {
   const [note, setNote] = useState("");
   const [notes, setNotes] = useState<{ text: string; time: string; author: string }[]>([
     { text: "Checked event logs, found authentication errors starting at 8:47 AM.", time: "10:15 AM", author: "Mike T." },
@@ -104,7 +106,13 @@ export default function TicketDetail({ ticket, onClose, onStatusChange, timer, o
         {/* Content */}
         <div style={{ flex: 1, overflow: "auto", padding: "20px" }}>
           {/* Title */}
-          <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, lineHeight: 1.4 }}>{ticket.title}</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, lineHeight: 1.4 }}>
+            <InlineEdit
+              value={ticket.title}
+              onSave={(newTitle) => onTicketUpdate(ticket.id, { title: newTitle })}
+              style={{ fontSize: 18, fontWeight: 600, lineHeight: 1.4 }}
+            />
+          </h2>
 
           {/* Timer */}
           <div style={{
@@ -190,7 +198,18 @@ export default function TicketDetail({ ticket, onClose, onStatusChange, timer, o
             <div style={{
               padding: "12px", borderRadius: 6, background: "var(--bg-tertiary)",
               fontSize: 14, lineHeight: 1.6, color: "var(--text-secondary)",
-            }}>{ticket.description}</div>
+            }}>
+              <InlineEdit
+                value={ticket.description}
+                onSave={(newDescription) => onTicketUpdate(ticket.id, { description: newDescription })}
+                multiline
+                style={{
+                  fontSize: 14, lineHeight: 1.6, color: "var(--text-secondary)",
+                  background: "transparent", border: "none", padding: 0,
+                }}
+                placeholder="Add a description..."
+              />
+            </div>
           </div>
 
           {/* Notes / Activity */}

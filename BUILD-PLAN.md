@@ -18,8 +18,8 @@
 - [x] **1.6** New ticket modal — Cmd+N shortcut, quick-create form with client/priority/assignee ✅
 
 ### Phase 2 — Interactivity & Polish (Sprint 2)
-- [ ] **2.1** Inline editing — click ticket title/description/priority to edit in-place
-- [ ] **2.2** Ticket filters & search — filter by client, assignee, priority, status
+- [x] **2.1** Inline editing — click ticket title/description/priority to edit in-place ✅
+- [x] **2.2** Ticket filters & search — filter by client, assignee, priority, status ✅
 - [ ] **2.3** Dashboard page — stats cards (open tickets, SLA breaches, hours today, revenue)
 - [ ] **2.4** Toast notifications — success/error feedback on actions
 - [ ] **2.5** Keyboard navigation — j/k to move between tickets, Enter to open, arrow keys in Kanban
@@ -54,5 +54,5 @@
 6. Restart: `docker rm -f helixpsa helixpsa-tunnel && docker run ... (see deploy script)`
 
 ## Current Status
-- **Last build:** v0.5 (1.1-1.6 complete — Phase 1 Sprint 1 COMPLETE ✅)
-- **Next up:** 2.1 (Inline editing — click ticket title/description/priority to edit in-place)
+- **Last build:** v0.6 (2.1-2.2 complete — Phase 1 Sprint 1 COMPLETE ✅, Phase 2 partially complete)
+- **Next up:** 2.3 (Dashboard page — stats cards (open tickets, SLA breaches, hours today, revenue))

@@ -45,6 +45,11 @@ export default function Home() {
     setSelectedTicket((prev) => prev?.id === ticketId ? { ...prev, status } : prev);
   }, []);
 
+  const handleTicketUpdate = useCallback((ticketId: string, updates: Partial<Ticket>) => {
+    setTickets((prev) => prev.map((t) => t.id === ticketId ? { ...t, ...updates } : t));
+    setSelectedTicket((prev) => prev?.id === ticketId ? { ...prev, ...updates } : prev);
+  }, []);
+
   const handleTicketClick = useCallback((ticket: Ticket) => {
     const fresh = tickets.find(t => t.id === ticket.id);
     setSelectedTicket(fresh || ticket);
@@ -182,6 +187,7 @@ export default function Home() {
             tickets={tickets}
             onTicketClick={handleTicketClick}
             onStatusChange={handleStatusChange}
+            onTicketUpdate={handleTicketUpdate}
             timer={timer}
           />
         </div>
@@ -203,6 +209,7 @@ export default function Home() {
         ticket={selectedTicket}
         onClose={() => setSelectedTicket(null)}
         onStatusChange={handleStatusChange}
+        onTicketUpdate={handleTicketUpdate}
         timer={timer}
         onTimerToggle={handleTimerToggle}
       />
