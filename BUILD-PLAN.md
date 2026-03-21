@@ -2,6 +2,11 @@
 
 ## Architecture
 - **Stack:** Next.js 16 + React 19 + Tailwind 4 + TypeScript
+- **Database:** PostgreSQL 17 + Drizzle ORM + PgBouncer (connection pooling)
+- **Cache/Real-time:** Redis (sessions, pub-sub, caching)
+- **Auth:** Auth.js (email/password + OAuth)
+- **API:** tRPC (type-safe RPC layer)
+- **Multi-tenancy:** Row-level security per MSP organization
 - **Local dev:** /home/csimmons/.openclaw/workspace/psa-project/app/
 - **GitHub:** https://github.com/donziguy/helixpsa
 - **Deploy:** Docker on 172.16.33.206:3002, tunnel via helixpsa.anexio.co
@@ -25,11 +30,11 @@
 - [x] **2.5** Keyboard navigation — j/k to move between tickets, Enter to open, arrow keys in Kanban ✅
 
 ### Phase 3 — Data & Auth (Sprint 3)
-- [ ] **3.1** PostgreSQL + Drizzle ORM schema (tickets, clients, users, time_entries, notes)
-- [ ] **3.2** Auth.js setup — email/password login, session management
-- [ ] **3.3** tRPC API layer — CRUD for tickets, clients, time entries
-- [ ] **3.4** Real-time updates — WebSocket for ticket changes across tabs
-- [ ] **3.5** Seed data — realistic MSP dataset for demo
+- [ ] **3.1** PostgreSQL + Drizzle ORM schema — organizations, users, tickets, clients, time_entries, notes, contacts. Row-level security via org_id on every table. Use PostgreSQL 17 with PgBouncer for connection pooling. Docker Compose service alongside the app.
+- [ ] **3.2** Auth.js setup — email/password login, session management, org-scoped sessions. JWT with org_id claim. Login/register pages.
+- [ ] **3.3** tRPC API layer — type-safe CRUD for tickets, clients, time entries. All queries filtered by session org_id. Zod validation on all inputs.
+- [ ] **3.4** Redis + real-time updates — Redis for session store, caching, and pub-sub. WebSocket via Socket.io or Hocuspocus for ticket changes across tabs/users.
+- [ ] **3.5** Seed data + migration — Drizzle migrations, realistic MSP seed dataset (2 orgs, 5 users, 50 tickets, 20 clients, 200 time entries). Script to reset/reseed.
 
 ### Phase 4 — Business Features (Sprint 4)
 - [ ] **4.1** Billing page — invoice generation from time entries, hourly rates per client
