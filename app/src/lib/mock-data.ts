@@ -35,6 +35,22 @@ export interface Client {
   onboardDate: string;
 }
 
+export interface TimeEntry {
+  id: string;
+  ticketId: string;
+  ticketNumber: string;
+  ticketTitle: string;
+  client: string;
+  assignee: string;
+  description: string;
+  startTime: string;
+  endTime: string | null;
+  duration: number; // minutes
+  billable: boolean;
+  hourlyRate: number;
+  date: string; // YYYY-MM-DD
+}
+
 export const clients: Client[] = [
   { 
     id: "c1", 
@@ -189,3 +205,156 @@ export const slaHealthConfig = {
   warning: { label: "Warning", color: "#f59e0b", bg: "rgba(245,158,11,0.15)" },
   breach: { label: "Breach", color: "#ef4444", bg: "rgba(239,68,68,0.15)" },
 };
+
+export const timeEntries: TimeEntry[] = [
+  {
+    id: "te1",
+    ticketId: "t1",
+    ticketNumber: "HLX-001",
+    ticketTitle: "Exchange server not syncing emails",
+    client: "Acme Corp",
+    assignee: "Mike T.",
+    description: "Investigating email sync issues",
+    startTime: "2026-03-20T14:30:00",
+    endTime: "2026-03-20T15:15:00",
+    duration: 45,
+    billable: true,
+    hourlyRate: 150,
+    date: "2026-03-20"
+  },
+  {
+    id: "te2",
+    ticketId: "t3",
+    ticketNumber: "HLX-003",
+    ticketTitle: "Firewall rule change request",
+    client: "Wayne Enterprises",
+    assignee: "Cory S.",
+    description: "Research and planning for firewall changes",
+    startTime: "2026-03-20T10:00:00",
+    endTime: "2026-03-20T10:30:00",
+    duration: 30,
+    billable: true,
+    hourlyRate: 175,
+    date: "2026-03-20"
+  },
+  {
+    id: "te3",
+    ticketId: "t5",
+    ticketNumber: "HLX-005",
+    ticketTitle: "Ransomware alert - endpoint quarantined",
+    client: "Stark Medical",
+    assignee: "Cory S.",
+    description: "Initial response and investigation",
+    startTime: "2026-03-20T18:45:00",
+    endTime: "2026-03-20T19:25:00",
+    duration: 40,
+    billable: true,
+    hourlyRate: 175,
+    date: "2026-03-20"
+  },
+  {
+    id: "te4",
+    ticketId: "t6",
+    ticketNumber: "HLX-006",
+    ticketTitle: "VPN disconnecting intermittently",
+    client: "Umbrella Legal",
+    assignee: "Jake R.",
+    description: "Client troubleshooting and log review",
+    startTime: "2026-03-20T13:00:00",
+    endTime: "2026-03-20T14:30:00",
+    duration: 90,
+    billable: true,
+    hourlyRate: 125,
+    date: "2026-03-20"
+  },
+  {
+    id: "te5",
+    ticketId: "t8",
+    ticketNumber: "HLX-008",
+    ticketTitle: "Backup job failed - SQL server",
+    client: "Globex Industries",
+    assignee: "Mike T.",
+    description: "Backup troubleshooting",
+    startTime: "2026-03-20T11:30:00",
+    endTime: "2026-03-20T11:55:00",
+    duration: 25,
+    billable: true,
+    hourlyRate: 150,
+    date: "2026-03-20"
+  },
+  {
+    id: "te6",
+    ticketId: "t9",
+    ticketNumber: "HLX-009",
+    ticketTitle: "Teams meeting room display not working",
+    client: "Acme Corp",
+    assignee: "Jake R.",
+    description: "Hardware troubleshooting and firmware update",
+    startTime: "2026-03-19T15:00:00",
+    endTime: "2026-03-19T15:35:00",
+    duration: 35,
+    billable: true,
+    hourlyRate: 125,
+    date: "2026-03-19"
+  },
+  {
+    id: "te7",
+    ticketId: "t1",
+    ticketNumber: "HLX-001",
+    ticketTitle: "Exchange server not syncing emails",
+    client: "Acme Corp",
+    assignee: "Mike T.",
+    description: "Team standup meeting",
+    startTime: "2026-03-19T09:00:00",
+    endTime: "2026-03-19T09:30:00",
+    duration: 30,
+    billable: false,
+    hourlyRate: 150,
+    date: "2026-03-19"
+  },
+  {
+    id: "te8",
+    ticketId: "t2",
+    ticketNumber: "HLX-002",
+    ticketTitle: "New employee onboarding - Sarah Chen",
+    client: "Globex Industries",
+    assignee: "Jake R.",
+    description: "Prep work for new hire setup",
+    startTime: "2026-03-19T16:00:00",
+    endTime: "2026-03-19T16:45:00",
+    duration: 45,
+    billable: true,
+    hourlyRate: 125,
+    date: "2026-03-19"
+  },
+  {
+    id: "te9",
+    ticketId: "t7",
+    ticketNumber: "HLX-007",
+    ticketTitle: "Azure AD conditional access policy review",
+    client: "Wayne Enterprises",
+    assignee: "Cory S.",
+    description: "Policy review and documentation",
+    startTime: "2026-03-18T14:00:00",
+    endTime: "2026-03-18T15:30:00",
+    duration: 90,
+    billable: true,
+    hourlyRate: 175,
+    date: "2026-03-18"
+  },
+  {
+    id: "te10",
+    ticketId: "t4",
+    ticketNumber: "HLX-004",
+    ticketTitle: "Printer offline on 3rd floor",
+    client: "Acme Corp",
+    assignee: "Mike T.",
+    description: "On-site printer diagnostics",
+    startTime: "2026-03-18T10:15:00",
+    endTime: "2026-03-18T11:00:00",
+    duration: 45,
+    billable: true,
+    hourlyRate: 150,
+    date: "2026-03-18"
+  }
+];
