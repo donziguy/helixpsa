@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import { timeEntries } from "@/lib/mock-data";
+import { useToastHelpers } from "@/lib/toast-context";
 
 export default function TimePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState("all");
   const [showBillableOnly, setShowBillableOnly] = useState(false);
+  const toast = useToastHelpers();
 
   // Generate date filter options
   const uniqueDates = [...new Set(timeEntries.map(entry => entry.date))].sort().reverse();
@@ -117,19 +119,24 @@ export default function TimePage() {
               </p>
             </div>
             
-            <button style={{
-              background: "var(--accent)",
-              color: "white",
-              border: "none",
-              padding: "8px 16px",
-              borderRadius: 6,
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}>
+            <button 
+              onClick={() => {
+                toast.info("Timer Started", "Manual timer feature coming soon - use ticket-based timers for now");
+              }}
+              style={{
+                background: "var(--accent)",
+                color: "white",
+                border: "none",
+                padding: "8px 16px",
+                borderRadius: 6,
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
               + Start Timer
             </button>
           </div>
@@ -268,7 +275,14 @@ export default function TimePage() {
               <input
                 type="checkbox"
                 checked={showBillableOnly}
-                onChange={(e) => setShowBillableOnly(e.target.checked)}
+                onChange={(e) => {
+                setShowBillableOnly(e.target.checked);
+                toast.info(
+                  e.target.checked ? "Showing billable only" : "Showing all entries", 
+                  undefined, 
+                  2000
+                );
+              }}
                 style={{ cursor: "pointer" }}
               />
               Billable only
@@ -286,6 +300,9 @@ export default function TimePage() {
             {filteredEntries.map((entry) => (
               <div
                 key={entry.id}
+                onClick={() => {
+                  toast.success("Time Entry Selected", `${entry.ticketNumber} - ${formatTime(entry.duration)}`);
+                }}
                 style={{
                   background: "var(--bg-secondary)",
                   border: "1px solid var(--border-subtle)",

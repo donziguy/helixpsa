@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import { clients, slaHealthConfig } from "@/lib/mock-data";
+import { useToastHelpers } from "@/lib/toast-context";
 
 export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const toast = useToastHelpers();
 
   // Filter clients based on search query
   const filteredClients = clients.filter(client =>
@@ -55,19 +57,24 @@ export default function ClientsPage() {
               </p>
             </div>
             
-            <button style={{
-              background: "var(--accent)",
-              color: "white",
-              border: "none",
-              padding: "8px 16px",
-              borderRadius: 6,
-              fontSize: 14,
-              fontWeight: 500,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}>
+            <button 
+              onClick={() => {
+                toast.info("Feature Coming Soon", "Client creation will be available in the next update");
+              }}
+              style={{
+                background: "var(--accent)",
+                color: "white",
+                border: "none",
+                padding: "8px 16px",
+                borderRadius: 6,
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
               + New Client
             </button>
           </div>
@@ -119,6 +126,9 @@ export default function ClientsPage() {
               return (
                 <div
                   key={client.id}
+                  onClick={() => {
+                    toast.success("Client Selected", `Viewing ${client.name} details`);
+                  }}
                   style={{
                     background: "var(--bg-secondary)",
                     border: "1px solid var(--border-subtle)",

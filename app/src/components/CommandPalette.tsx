@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { tickets, clients } from "@/lib/mock-data";
+import { useToastHelpers } from "@/lib/toast-context";
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export default function CommandPalette({ isOpen, onClose, onNewTicket }: Command
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const toast = useToastHelpers();
 
   useEffect(() => {
     if (isOpen) {
@@ -57,6 +59,26 @@ export default function CommandPalette({ isOpen, onClose, onNewTicket }: Command
   const handleSelect = (result: Result) => {
     if (result.type === "action" && result.label === "New Ticket" && onNewTicket) {
       onNewTicket();
+    } else if (result.type === "action") {
+      // Handle other actions with toast feedback
+      switch (result.label) {
+        case "Start Timer":
+          toast.info("Timer Feature", "Manual timer coming soon - use ticket-based timers for now");
+          break;
+        case "View Dashboard":
+          toast.success("Navigation", "Redirecting to dashboard...");
+          // In a real app, you'd navigate here: router.push('/')
+          break;
+        case "New Client":
+          toast.info("Feature Coming Soon", "Client creation will be available in the next update");
+          break;
+        default:
+          toast.info("Action", `${result.label} selected`);
+      }
+    } else if (result.type === "ticket") {
+      toast.success("Ticket Selected", result.label);
+    } else if (result.type === "client") {
+      toast.success("Client Selected", `Viewing ${result.label} details`);
     }
     onClose();
   };
