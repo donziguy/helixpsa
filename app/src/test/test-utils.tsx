@@ -1,9 +1,14 @@
 import { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { ToastProvider } from '@/lib/toast-context';
+import { SessionProvider } from 'next-auth/react';
 
 function AllProviders({ children }: { children: React.ReactNode }) {
-  return <ToastProvider>{children}</ToastProvider>;
+  return (
+    <SessionProvider>
+      <ToastProvider>{children}</ToastProvider>
+    </SessionProvider>
+  );
 }
 
 export function renderWithProviders(

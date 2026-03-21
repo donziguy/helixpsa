@@ -20,14 +20,45 @@ export const organizations = pgTable('organizations', {
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  email: varchar('email', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  password: varchar('password', { length: 255 }).notNull(),
   firstName: varchar('first_name', { length: 100 }).notNull(),
   lastName: varchar('last_name', { length: 100 }).notNull(),
   role: varchar('role', { length: 50 }).notNull().default('technician'), // admin, manager, technician
   isActive: boolean('is_active').notNull().default(true),
+  emailVerified: timestamp('email_verified'),
   hourlyRate: decimal('hourly_rate', { precision: 10, scale: 2 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Auth.js required tables
+export const accounts = pgTable('accounts', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: varchar('type', { length: 255 }).notNull(),
+  provider: varchar('provider', { length: 255 }).notNull(),
+  providerAccountId: varchar('provider_account_id', { length: 255 }).notNull(),
+  refresh_token: text('refresh_token'),
+  access_token: text('access_token'),
+  expires_at: integer('expires_at'),
+  token_type: varchar('token_type', { length: 255 }),
+  scope: varchar('scope', { length: 255 }),
+  id_token: text('id_token'),
+  session_state: varchar('session_state', { length: 255 }),
+});
+
+export const sessions = pgTable('sessions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sessionToken: varchar('session_token', { length: 255 }).notNull().unique(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  expires: timestamp('expires').notNull(),
+});
+
+export const verificationTokens = pgTable('verification_tokens', {
+  identifier: varchar('identifier', { length: 255 }).notNull(),
+  token: varchar('token', { length: 255 }).notNull().unique(),
+  expires: timestamp('expires').notNull(),
 });
 
 // Clients table
@@ -125,6 +156,22 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   assignedTickets: many(tickets),
   timeEntries: many(timeEntries),
   notes: many(notes),
+  accounts: many(accounts),
+  sessions: many(sessions),
+}));
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+  user: one(users, {
+    fields: [accounts.userId],
+    references: [users.id],
+  }),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
 }));
 
 export const clientsRelations = relations(clients, ({ one, many }) => ({
@@ -214,3 +261,9 @@ export type TimeEntry = typeof timeEntries.$inferSelect;
 export type NewTimeEntry = typeof timeEntries.$inferInsert;
 export type Note = typeof notes.$inferSelect;
 export type NewNote = typeof notes.$inferInsert;
+export type Account = typeof accounts.$inferSelect;
+export type NewAccount = typeof accounts.$inferInsert;
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
+export type VerificationToken = typeof verificationTokens.$inferSelect;
+export type NewVerificationToken = typeof verificationTokens.$inferInsert;

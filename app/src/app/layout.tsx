@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { ToastProvider } from "@/lib/toast-context";
+import SessionProvider from "@/components/SessionProvider";
+import TRPCProvider from "@/components/TRPCProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,9 +17,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <SessionProvider>
+          <TRPCProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </TRPCProvider>
+        </SessionProvider>
       </body>
     </html>
   );

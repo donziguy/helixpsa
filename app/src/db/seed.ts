@@ -2,6 +2,7 @@ import { db } from './index';
 import * as schema from './schema';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import bcrypt from 'bcryptjs';
 
 // Helper to execute raw SQL
 async function executeSQL(sql: string) {
@@ -32,10 +33,13 @@ export async function seedDatabase() {
 
     // Create users for each organization
     console.log('Creating users...');
+    const hashedPassword = await bcrypt.hash('password123', 10);
+    
     const users1 = await db.insert(schema.users).values([
       {
         organizationId: org1.id,
         email: 'cory@primeits.com',
+        password: hashedPassword,
         firstName: 'Cory',
         lastName: 'Simmons',
         role: 'admin',
@@ -44,6 +48,7 @@ export async function seedDatabase() {
       {
         organizationId: org1.id,
         email: 'mike@primeits.com',
+        password: hashedPassword,
         firstName: 'Mike',
         lastName: 'Torres',
         role: 'technician',
@@ -52,6 +57,7 @@ export async function seedDatabase() {
       {
         organizationId: org1.id,
         email: 'jake@primeits.com',
+        password: hashedPassword,
         firstName: 'Jake',
         lastName: 'Rodriguez',
         role: 'technician',
@@ -63,6 +69,7 @@ export async function seedDatabase() {
       {
         organizationId: org2.id,
         email: 'admin@techflow.com',
+        password: hashedPassword,
         firstName: 'Sarah',
         lastName: 'Chen',
         role: 'admin',
@@ -71,6 +78,7 @@ export async function seedDatabase() {
       {
         organizationId: org2.id,
         email: 'tech@techflow.com',
+        password: hashedPassword,
         firstName: 'Alex',
         lastName: 'Kim',
         role: 'technician',
