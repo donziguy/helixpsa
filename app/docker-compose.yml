@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: helixpsa-postgres
+    environment:
+      POSTGRES_DB: helixpsa
+      POSTGRES_USER: helixpsa
+      POSTGRES_PASSWORD: helixpsa_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helixpsa -d helixpsa"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  pgbouncer:
+    image: pgbouncer/pgbouncer:1.21.0
+    container_name: helixpsa-pgbouncer
+    environment:
+      DATABASES_HOST: postgres
+      DATABASES_PORT: 5432
+      DATABASES_USER: helixpsa
+      DATABASES_PASSWORD: helixpsa_dev_password
+      DATABASES_DBNAME: helixpsa
+      POOL_MODE: transaction
+      SERVER_RESET_QUERY: DISCARD ALL
+      MAX_CLIENT_CONN: 25
+      DEFAULT_POOL_SIZE: 25
+      ADMIN_USERS: helixpsa
+    ports:
+      - "6432:5432"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

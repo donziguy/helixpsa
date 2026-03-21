@@ -175,6 +175,9 @@ describe('TicketBoard', () => {
     it('navigates to first/last with Home/End keys', () => {
       render(<TicketBoard {...mockProps} />);
       
+      // Navigate to a ticket first
+      fireEvent.keyDown(window, { key: 'j' });
+      
       fireEvent.keyDown(window, { key: 'Home' });
       expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
       

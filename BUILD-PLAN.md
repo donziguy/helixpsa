@@ -30,7 +30,7 @@
 - [x] **2.5** Keyboard navigation — j/k to move between tickets, Enter to open, arrow keys in Kanban ✅
 
 ### Phase 3 — Data & Auth (Sprint 3)
-- [ ] **3.1** PostgreSQL + Drizzle ORM schema — organizations, users, tickets, clients, time_entries, notes, contacts. Row-level security via org_id on every table. Use PostgreSQL 17 with PgBouncer for connection pooling. Docker Compose service alongside the app.
+- [x] **3.1** PostgreSQL + Drizzle ORM schema — organizations, users, tickets, clients, time_entries, notes, contacts. Row-level security via org_id on every table. Use PostgreSQL 17 with PgBouncer for connection pooling. Docker Compose service alongside the app. ✅
 - [ ] **3.2** Auth.js setup — email/password login, session management, org-scoped sessions. JWT with org_id claim. Login/register pages.
 - [ ] **3.3** tRPC API layer — type-safe CRUD for tickets, clients, time entries. All queries filtered by session org_id. Zod validation on all inputs.
 - [ ] **3.4** Redis + real-time updates — Redis for session store, caching, and pub-sub. WebSocket via Socket.io or Hocuspocus for ticket changes across tabs/users.
@@ -59,5 +59,5 @@
 6. Restart: `docker rm -f helixpsa helixpsa-tunnel && docker run ... (see deploy script)`
 
 ## Current Status
-- **Last build:** v0.8 (2.5 complete — Keyboard navigation fully implemented)
-- **Next up:** 3.1 (PostgreSQL + Drizzle ORM schema for tickets, clients, users, time_entries, notes)
+- **Last build:** v0.9 (3.1 complete — PostgreSQL + Drizzle ORM schema with row-level security)
+- **Next up:** 3.2 (Auth.js setup — email/password login, session management, org-scoped sessions)
