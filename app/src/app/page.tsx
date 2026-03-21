@@ -5,10 +5,12 @@ import Sidebar from "@/components/Sidebar";
 import TicketBoard from "@/components/TicketBoard";
 import CommandPalette from "@/components/CommandPalette";
 import TicketDetail from "@/components/TicketDetail";
+import NewTicketModal from "@/components/NewTicketModal";
 import { tickets as initialTickets, type Ticket, type Status } from "@/lib/mock-data";
 
 export default function Home() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [newTicketModalOpen, setNewTicketModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>(initialTickets);
   const [timer, setTimer] = useState<{ ticketId: string; seconds: number; running: boolean } | null>(null);
@@ -53,6 +55,25 @@ export default function Home() {
     });
   }, [tickets]);
 
+  const handleNewTicket = useCallback((newTicketData: Omit<Ticket, "id" | "number" | "status" | "created" | "updated" | "timeSpent">) => {
+    const nextNumber = `HLX-${String(tickets.length + 1).padStart(3, '0')}`;
+    const newTicket: Ticket = {
+      ...newTicketData,
+      id: `t${tickets.length + 1}`,
+      number: nextNumber,
+      status: "open",
+      created: "Just now",
+      updated: "Just now",
+      timeSpent: 0,
+    };
+    
+    setTickets((prev) => [newTicket, ...prev]);
+    // Auto-open the new ticket
+    setSelectedTicket(newTicket);
+    // Auto-start timer
+    setTimer({ ticketId: newTicket.id, seconds: 0, running: true });
+  }, [tickets]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -67,14 +88,14 @@ export default function Home() {
         e.preventDefault();
         setCommandPaletteOpen(true);
       }
-      if (e.key === "n" && !inInput && !commandPaletteOpen) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "n" && !newTicketModalOpen) {
         e.preventDefault();
-        // TODO: open new ticket modal
+        setNewTicketModalOpen(true);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [commandPaletteOpen]);
+  }, [commandPaletteOpen, newTicketModalOpen]);
 
   const formatTime = (s: number) => {
     const h = Math.floor(s / 3600);
@@ -166,7 +187,17 @@ export default function Home() {
         </div>
       </main>
 
-      <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
+      <CommandPalette 
+        isOpen={commandPaletteOpen} 
+        onClose={() => setCommandPaletteOpen(false)}
+        onNewTicket={() => setNewTicketModalOpen(true)}
+      />
+
+      <NewTicketModal
+        isOpen={newTicketModalOpen}
+        onClose={() => setNewTicketModalOpen(false)}
+        onSubmit={handleNewTicket}
+      />
 
       <TicketDetail
         ticket={selectedTicket}

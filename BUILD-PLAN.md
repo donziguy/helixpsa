@@ -15,7 +15,7 @@
 - [x] **1.3** Drag-and-drop Kanban ✅
 - [x] **1.4** Client page — list all clients, contact info, ticket counts, SLA health ✅
 - [x] **1.5** Time tracking page — all time entries, daily/weekly totals, billable toggle ✅
-- [ ] **1.6** New ticket modal — Cmd+N shortcut, quick-create form with client/priority/assignee
+- [x] **1.6** New ticket modal — Cmd+N shortcut, quick-create form with client/priority/assignee ✅
 
 ### Phase 2 — Interactivity & Polish (Sprint 2)
 - [ ] **2.1** Inline editing — click ticket title/description/priority to edit in-place
@@ -54,5 +54,5 @@
 6. Restart: `docker rm -f helixpsa helixpsa-tunnel && docker run ... (see deploy script)`
 
 ## Current Status
-- **Last build:** v0.4 (1.1-1.5 complete)
-- **Next up:** 1.6 (New ticket modal — Cmd+N shortcut, quick-create form)
+- **Last build:** v0.5 (1.1-1.6 complete — Phase 1 Sprint 1 COMPLETE ✅)
+- **Next up:** 2.1 (Inline editing — click ticket title/description/priority to edit in-place)

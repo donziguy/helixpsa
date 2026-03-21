@@ -6,6 +6,7 @@ import { tickets, clients } from "@/lib/mock-data";
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
+  onNewTicket?: () => void;
 }
 
 type Result = { type: "ticket" | "client" | "action"; label: string; sub: string; icon: string };
@@ -17,7 +18,7 @@ const actions: Result[] = [
   { type: "action", label: "New Client", sub: "Add a new client", icon: "👥" },
 ];
 
-export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
+export default function CommandPalette({ isOpen, onClose, onNewTicket }: CommandPaletteProps) {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -50,7 +51,14 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     if (e.key === "ArrowDown") { e.preventDefault(); setSelectedIndex(i => Math.min(i + 1, results.length - 1)); }
     if (e.key === "ArrowUp") { e.preventDefault(); setSelectedIndex(i => Math.max(i - 1, 0)); }
     if (e.key === "Escape") onClose();
-    if (e.key === "Enter" && results.length > 0) onClose();
+    if (e.key === "Enter" && results.length > 0) handleSelect(results[selectedIndex]);
+  };
+
+  const handleSelect = (result: Result) => {
+    if (result.type === "action" && result.label === "New Ticket" && onNewTicket) {
+      onNewTicket();
+    }
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -114,6 +122,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                 transition: "background 50ms ease",
               }}
               onMouseEnter={() => setSelectedIndex(i)}
+              onClick={() => handleSelect(result)}
             >
               <span style={{ fontSize: 16, width: 24, textAlign: "center" }}>{result.icon}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
