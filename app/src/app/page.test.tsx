@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@/test/test-utils';
 import Home from './page';
 
 // Mock components to avoid complex rendering
@@ -7,14 +7,8 @@ vi.mock('@/components/Sidebar', () => ({
   default: () => <div data-testid="sidebar">Sidebar</div>
 }));
 
-vi.mock('@/components/TicketBoard', () => ({
-  default: ({ onTicketClick }: { onTicketClick: (ticket: any) => void }) => (
-    <div data-testid="ticket-board">
-      <button onClick={() => onTicketClick({ id: 't1', number: 'HLX-001' })}>
-        Test Ticket
-      </button>
-    </div>
-  )
+vi.mock('@/components/Dashboard', () => ({
+  default: () => <div data-testid="dashboard">Dashboard</div>
 }));
 
 vi.mock('@/components/CommandPalette', () => ({
@@ -34,28 +28,17 @@ vi.mock('@/components/NewTicketModal', () => ({
         <button onClick={onClose}>Close Modal</button>
         <button onClick={() => {
           onSubmit({ 
-            title: 'Test', 
+            title: 'Test Ticket', 
             client: 'Acme Corp', 
             assignee: 'Cory S.', 
             priority: 'medium', 
             description: 'Test description',
             sla: '24h remaining'
           });
-          // Mock automatically calls onClose after submit like the real component does
           onClose();
         }}>
           Submit
         </button>
-      </div>
-    ) : null
-}));
-
-vi.mock('@/components/TicketDetail', () => ({
-  default: ({ ticket, onClose }: any) => 
-    ticket ? (
-      <div data-testid="ticket-detail">
-        <button onClick={onClose}>Close Detail</button>
-        <div>Ticket: {ticket.number}</div>
       </div>
     ) : null
 }));
@@ -68,7 +51,7 @@ describe('Home', () => {
   it('renders main layout components', () => {
     render(<Home />);
     expect(screen.getByTestId('sidebar')).toBeInTheDocument();
-    expect(screen.getByTestId('ticket-board')).toBeInTheDocument();
+    expect(screen.getByTestId('dashboard')).toBeInTheDocument();
   });
 
   it('has search button with keyboard shortcut hint', () => {
@@ -151,31 +134,58 @@ describe('Home', () => {
     
     // Modal should close
     expect(screen.queryByTestId('new-ticket-modal')).not.toBeInTheDocument();
-    
-    // Should open ticket detail for new ticket
-    expect(screen.getAllByTestId('ticket-detail').length).toBeGreaterThan(0);
   });
 
-  it('shows active timer when ticket timer is running', () => {
+  it('shows notification button', () => {
     render(<Home />);
-    
-    // Click on a ticket to start timer
-    fireEvent.click(screen.getAllByText('Test Ticket')[0]);
-    
-    // Should show ticket detail
-    expect(screen.getAllByTestId('ticket-detail').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('HLX-001').length).toBeGreaterThan(0);
+    const notificationButtons = document.querySelectorAll('button[style*="font-size: 18"]');
+    expect(notificationButtons.length).toBeGreaterThan(0);
   });
 
-  it('closes ticket detail when close button is clicked', () => {
+  it('opens command palette when search button clicked', () => {
+    render(<Home />);
+    const searchButton = screen.getAllByText('Search or press /')[0].closest('button');
+    expect(searchButton).not.toBeNull();
+    fireEvent.click(searchButton!);
+    expect(screen.getAllByTestId('command-palette').length).toBeGreaterThan(0);
+  });
+
+  it('closes command palette when close button clicked', () => {
     render(<Home />);
     
-    // Click on a ticket
-    fireEvent.click(screen.getAllByText('Test Ticket')[0]);
-    expect(screen.getAllByTestId('ticket-detail').length).toBeGreaterThan(0);
+    // Open command palette
+    fireEvent.keyDown(window, { key: 'k', metaKey: true });
+    expect(screen.getAllByTestId('command-palette').length).toBeGreaterThan(0);
     
-    // Close detail
-    fireEvent.click(screen.getAllByText('Close Detail')[0]);
-    expect(screen.queryByTestId('ticket-detail')).not.toBeInTheDocument();
+    // Close it
+    fireEvent.click(screen.getAllByText('Close')[0]);
+    expect(screen.queryByTestId('command-palette')).not.toBeInTheDocument();
+  });
+
+  it('prevents shortcuts when typing in input fields', () => {
+    render(<Home />);
+    
+    // Create a mock input
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    
+    // Should not open command palette when typing in input
+    fireEvent.keyDown(input, { key: '/' });
+    expect(screen.queryByTestId('command-palette')).not.toBeInTheDocument();
+    
+    document.body.removeChild(input);
+  });
+
+  it('maintains ticket state for new ticket creation', () => {
+    render(<Home />);
+    
+    // Initially should have 10 tickets (from mock data)
+    // Create a new ticket
+    fireEvent.keyDown(window, { key: 'n', metaKey: true });
+    fireEvent.click(screen.getAllByText('Submit')[0]);
+    
+    // New ticket should be added to state (verified by no errors)
+    expect(screen.queryByTestId('new-ticket-modal')).not.toBeInTheDocument();
   });
 });

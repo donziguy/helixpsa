@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@/test/test-utils';
 import TicketDetail from './TicketDetail';
 import { tickets } from '@/lib/mock-data';
 
@@ -111,22 +111,15 @@ describe('TicketDetail', () => {
     const props = makeProps();
     render(<TicketDetail {...props} />);
     
-    // Find the InlineEdit span for the title - look for exact title with click-to-edit tooltip
-    const titleSpans = document.querySelectorAll('span[title="Click to edit"]');
-    const titleSpan = Array.from(titleSpans).find(span => 
+    const titleSpans = Array.from(document.querySelectorAll('span[title="Click to edit"]')).filter(span => 
       span.textContent?.includes(ticket.title)
     );
+    expect(titleSpans.length).toBeGreaterThan(0);
     
-    expect(titleSpan).toBeTruthy();
+    fireEvent.click(titleSpans[titleSpans.length - 1]);
     
-    // Click the span to enter edit mode
-    fireEvent.click(titleSpan!);
-    
-    // Should show an input
-    const input = screen.getByDisplayValue(ticket.title) as HTMLInputElement;
-    expect(input).toBeTruthy();
-    
-    // Change the value and save
+    const inputs = screen.getAllByDisplayValue(ticket.title);
+    const input = inputs[inputs.length - 1] as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'New Title' } });
     fireEvent.blur(input);
     
@@ -137,22 +130,15 @@ describe('TicketDetail', () => {
     const props = makeProps();
     render(<TicketDetail {...props} />);
     
-    // Find the InlineEdit span for the description
-    const descSpans = document.querySelectorAll('span[title="Click to edit"]');
-    const descSpan = Array.from(descSpans).find(span => 
+    const descSpans = Array.from(document.querySelectorAll('span[title="Click to edit"]')).filter(span => 
       span.textContent?.includes(ticket.description)
     );
+    expect(descSpans.length).toBeGreaterThan(0);
     
-    expect(descSpan).toBeTruthy();
+    fireEvent.click(descSpans[descSpans.length - 1]);
     
-    // Click the span to enter edit mode
-    fireEvent.click(descSpan!);
-    
-    // Should show a textarea
-    const textarea = screen.getByDisplayValue(ticket.description) as HTMLTextAreaElement;
-    expect(textarea).toBeTruthy();
-    
-    // Change the value and save
+    const textareas = screen.getAllByDisplayValue(ticket.description);
+    const textarea = textareas[textareas.length - 1] as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: 'New description' } });
     fireEvent.blur(textarea);
     

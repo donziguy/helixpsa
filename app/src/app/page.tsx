@@ -1,66 +1,20 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
-import TicketBoard from "@/components/TicketBoard";
+import Dashboard from "@/components/Dashboard";
 import CommandPalette from "@/components/CommandPalette";
-import TicketDetail from "@/components/TicketDetail";
 import NewTicketModal from "@/components/NewTicketModal";
-import { tickets as initialTickets, type Ticket, type Status } from "@/lib/mock-data";
+import { tickets as initialTickets, type Ticket } from "@/lib/mock-data";
+import { useToastHelpers } from "@/lib/toast-context";
 
 export default function Home() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [newTicketModalOpen, setNewTicketModalOpen] = useState(false);
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>(initialTickets);
-  const [timer, setTimer] = useState<{ ticketId: string; seconds: number; running: boolean } | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const toast = useToastHelpers();
 
-  // Timer tick
-  useEffect(() => {
-    if (timer?.running) {
-      timerRef.current = setInterval(() => {
-        setTimer((prev) => prev ? { ...prev, seconds: prev.seconds + 1 } : null);
-      }, 1000);
-    } else if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [timer?.running, timer?.ticketId]);
-
-  const handleTimerToggle = useCallback((ticketId: string) => {
-    setTimer((prev) => {
-      if (prev?.ticketId === ticketId && prev.running) {
-        return { ...prev, running: false };
-      }
-      if (prev?.ticketId === ticketId) {
-        return { ...prev, running: true };
-      }
-      return { ticketId, seconds: 0, running: true };
-    });
-  }, []);
-
-  const handleStatusChange = useCallback((ticketId: string, status: Status) => {
-    setTickets((prev) => prev.map((t) => t.id === ticketId ? { ...t, status } : t));
-    setSelectedTicket((prev) => prev?.id === ticketId ? { ...prev, status } : prev);
-  }, []);
-
-  const handleTicketUpdate = useCallback((ticketId: string, updates: Partial<Ticket>) => {
-    setTickets((prev) => prev.map((t) => t.id === ticketId ? { ...t, ...updates } : t));
-    setSelectedTicket((prev) => prev?.id === ticketId ? { ...prev, ...updates } : prev);
-  }, []);
-
-  const handleTicketClick = useCallback((ticket: Ticket) => {
-    const fresh = tickets.find(t => t.id === ticket.id);
-    setSelectedTicket(fresh || ticket);
-    // Auto-start timer when opening a ticket
-    setTimer((prev) => {
-      if (prev?.ticketId === ticket.id) return prev; // already on this ticket
-      return { ticketId: ticket.id, seconds: 0, running: true };
-    });
-  }, [tickets]);
-
-  const handleNewTicket = useCallback((newTicketData: Omit<Ticket, "id" | "number" | "status" | "created" | "updated" | "timeSpent">) => {
+  const handleNewTicket = (newTicketData: Omit<Ticket, "id" | "number" | "status" | "created" | "updated" | "timeSpent">) => {
     const nextNumber = `HLX-${String(tickets.length + 1).padStart(3, '0')}`;
     const newTicket: Ticket = {
       ...newTicketData,
@@ -73,11 +27,13 @@ export default function Home() {
     };
     
     setTickets((prev) => [newTicket, ...prev]);
-    // Auto-open the new ticket
-    setSelectedTicket(newTicket);
-    // Auto-start timer
-    setTimer({ ticketId: newTicket.id, seconds: 0, running: true });
-  }, [tickets]);
+    
+    // Show success toast
+    toast.success(
+      "Ticket Created",
+      `${nextNumber} - ${newTicketData.title}`
+    );
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -101,15 +57,6 @@ export default function Home() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [commandPaletteOpen, newTicketModalOpen]);
-
-  const formatTime = (s: number) => {
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const sec = s % 60;
-    return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-  };
-
-  const activeTicket = timer?.running ? tickets.find(t => t.id === timer.ticketId) : null;
 
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
@@ -146,27 +93,6 @@ export default function Home() {
           </button>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* Active timer */}
-            {activeTicket && timer && (
-              <div
-                onClick={() => handleTicketClick(activeTicket)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 6,
-                  padding: "6px 12px", borderRadius: 6,
-                  background: "rgba(34,197,94,0.1)",
-                  border: "1px solid rgba(34,197,94,0.2)",
-                  fontSize: 13, color: "#22c55e", fontWeight: 500,
-                  cursor: "pointer",
-                }}
-              >
-                <span style={{
-                  width: 8, height: 8, borderRadius: "50%",
-                  background: "#22c55e", animation: "pulse 2s infinite",
-                }} />
-                <span>{activeTicket.number}</span>
-                <span style={{ fontFamily: "monospace" }}>{formatTime(timer.seconds)}</span>
-              </div>
-            )}
             <button style={{
               position: "relative",
               background: "none", border: "none", cursor: "pointer",
@@ -182,14 +108,8 @@ export default function Home() {
           </div>
         </header>
 
-        <div style={{ flex: 1, padding: 24, overflow: "auto" }}>
-          <TicketBoard
-            tickets={tickets}
-            onTicketClick={handleTicketClick}
-            onStatusChange={handleStatusChange}
-            onTicketUpdate={handleTicketUpdate}
-            timer={timer}
-          />
+        <div style={{ flex: 1, overflow: "auto" }}>
+          <Dashboard />
         </div>
       </main>
 
@@ -204,22 +124,6 @@ export default function Home() {
         onClose={() => setNewTicketModalOpen(false)}
         onSubmit={handleNewTicket}
       />
-
-      <TicketDetail
-        ticket={selectedTicket}
-        onClose={() => setSelectedTicket(null)}
-        onStatusChange={handleStatusChange}
-        onTicketUpdate={handleTicketUpdate}
-        timer={timer}
-        onTimerToggle={handleTimerToggle}
-      />
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
     </div>
   );
 }

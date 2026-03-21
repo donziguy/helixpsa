@@ -20,7 +20,7 @@
 ### Phase 2 — Interactivity & Polish (Sprint 2)
 - [x] **2.1** Inline editing — click ticket title/description/priority to edit in-place ✅
 - [x] **2.2** Ticket filters & search — filter by client, assignee, priority, status ✅
-- [ ] **2.3** Dashboard page — stats cards (open tickets, SLA breaches, hours today, revenue)
+- [x] **2.3** Dashboard page — stats cards (open tickets, SLA breaches, hours today, revenue) ✅
 - [ ] **2.4** Toast notifications — success/error feedback on actions
 - [ ] **2.5** Keyboard navigation — j/k to move between tickets, Enter to open, arrow keys in Kanban
 
