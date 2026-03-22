@@ -3,6 +3,7 @@ import { createTRPCRouter, protectedProcedure } from "../trpc"
 import { timeEntries, tickets, clients, users } from "@/db/schema"
 import { and, eq, desc, sum, sql, isNotNull } from "drizzle-orm"
 import { TRPCError } from "@trpc/server"
+import { events } from "@/lib/realtime"
 
 // Input validation schemas
 const createTimeEntrySchema = z.object({
@@ -208,6 +209,12 @@ export const timeEntriesRouter = createTRPCRouter({
         })
         .returning()
 
+      // Emit real-time event
+      await events.emitTimeEntryEvent({
+        type: 'time_entry_created',
+        data: newTimeEntry
+      }, ctx.organizationId)
+
       return newTimeEntry
     }),
 
@@ -261,6 +268,12 @@ export const timeEntriesRouter = createTRPCRouter({
         .where(eq(timeEntries.id, input.id))
         .returning()
 
+      // Emit real-time event
+      await events.emitTimeEntryEvent({
+        type: 'time_entry_updated',
+        data: updatedTimeEntry
+      }, ctx.organizationId)
+
       return updatedTimeEntry
     }),
 
@@ -289,6 +302,16 @@ export const timeEntriesRouter = createTRPCRouter({
       await ctx.db
         .delete(timeEntries)
         .where(eq(timeEntries.id, input.id))
+
+      // Emit real-time event
+      await events.emitTimeEntryEvent({
+        type: 'time_entry_deleted',
+        data: {
+          id: input.id,
+          ticketId: existingTimeEntry.ticketId,
+          organizationId: ctx.organizationId
+        }
+      }, ctx.organizationId)
 
       return { success: true }
     }),
@@ -417,6 +440,7 @@ export const timeEntriesRouter = createTRPCRouter({
         })
       }
 
+      const startTime = new Date()
       const [newTimer] = await ctx.db
         .insert(timeEntries)
         .values({
@@ -424,10 +448,21 @@ export const timeEntriesRouter = createTRPCRouter({
           ticketId: input.ticketId,
           userId: ctx.userId,
           description: input.description,
-          startTime: new Date(),
+          startTime,
           billable: true,
         })
         .returning()
+
+      // Emit real-time event
+      await events.emitTimerEvent({
+        type: 'timer_started',
+        data: {
+          ticketId: input.ticketId,
+          userId: ctx.userId,
+          startTime: startTime.toISOString(),
+          organizationId: ctx.organizationId
+        }
+      }, ctx.organizationId)
 
       return newTimer
     }),
@@ -470,6 +505,22 @@ export const timeEntriesRouter = createTRPCRouter({
         })
         .where(eq(timeEntries.id, input.id))
         .returning()
+
+      // Emit real-time events
+      await events.emitTimerEvent({
+        type: 'timer_stopped',
+        data: {
+          ticketId: runningTimer.ticketId,
+          userId: ctx.userId,
+          duration,
+          organizationId: ctx.organizationId
+        }
+      }, ctx.organizationId)
+
+      await events.emitTimeEntryEvent({
+        type: 'time_entry_updated',
+        data: stoppedTimer
+      }, ctx.organizationId)
 
       return stoppedTimer
     }),

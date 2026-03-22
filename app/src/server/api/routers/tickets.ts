@@ -3,6 +3,7 @@ import { createTRPCRouter, protectedProcedure } from "../trpc"
 import { tickets, clients, users, timeEntries } from "@/db/schema"
 import { and, eq, desc, asc, count, sum, isNotNull, sql } from "drizzle-orm"
 import { TRPCError } from "@trpc/server"
+import { events } from "@/lib/realtime"
 
 // Input validation schemas
 const createTicketSchema = z.object({
@@ -214,6 +215,12 @@ export const ticketsRouter = createTRPCRouter({
         })
         .returning()
 
+      // Emit real-time event
+      await events.emitTicketEvent({
+        type: 'ticket_created',
+        data: newTicket
+      }, ctx.organizationId)
+
       return newTicket
     }),
 
@@ -283,6 +290,35 @@ export const ticketsRouter = createTRPCRouter({
         .where(eq(tickets.id, input.id))
         .returning()
 
+      // Emit real-time events
+      await events.emitTicketEvent({
+        type: 'ticket_updated',
+        data: updatedTicket
+      }, ctx.organizationId)
+
+      // Emit specific events for status and assignment changes
+      if (input.status && input.status !== existingTicket.status) {
+        await events.emitTicketEvent({
+          type: 'ticket_status_changed',
+          data: {
+            ticketId: updatedTicket.id,
+            status: updatedTicket.status,
+            organizationId: ctx.organizationId
+          }
+        }, ctx.organizationId)
+      }
+
+      if (input.assigneeId !== undefined && input.assigneeId !== existingTicket.assigneeId) {
+        await events.emitTicketEvent({
+          type: 'ticket_assigned',
+          data: {
+            ticketId: updatedTicket.id,
+            assigneeId: updatedTicket.assigneeId,
+            organizationId: ctx.organizationId
+          }
+        }, ctx.organizationId)
+      }
+
       return updatedTicket
     }),
 
@@ -310,6 +346,15 @@ export const ticketsRouter = createTRPCRouter({
       await ctx.db
         .delete(tickets)
         .where(eq(tickets.id, input.id))
+
+      // Emit real-time event
+      await events.emitTicketEvent({
+        type: 'ticket_deleted',
+        data: {
+          id: input.id,
+          organizationId: ctx.organizationId
+        }
+      }, ctx.organizationId)
 
       return { success: true }
     }),

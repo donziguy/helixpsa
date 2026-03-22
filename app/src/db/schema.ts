@@ -138,6 +138,38 @@ export const notes = pgTable('notes', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Invoices table
+export const invoices = pgTable('invoices', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  clientId: uuid('client_id').notNull().references(() => clients.id, { onDelete: 'cascade' }),
+  invoiceNumber: varchar('invoice_number', { length: 50 }).notNull().unique(),
+  status: varchar('status', { length: 20 }).notNull().default('draft'), // draft, sent, paid, overdue, void
+  dateIssued: timestamp('date_issued').notNull().defaultNow(),
+  dateDue: timestamp('date_due').notNull(),
+  datePaid: timestamp('date_paid'),
+  subtotal: decimal('subtotal', { precision: 10, scale: 2 }).notNull(),
+  tax: decimal('tax', { precision: 10, scale: 2 }).notNull().default('0'),
+  total: decimal('total', { precision: 10, scale: 2 }).notNull(),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Invoice line items table
+export const invoiceLineItems = pgTable('invoice_line_items', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  invoiceId: uuid('invoice_id').notNull().references(() => invoices.id, { onDelete: 'cascade' }),
+  timeEntryId: uuid('time_entry_id').references(() => timeEntries.id, { onDelete: 'set null' }),
+  description: text('description').notNull(),
+  quantity: decimal('quantity', { precision: 8, scale: 2 }).notNull(),
+  rate: decimal('rate', { precision: 10, scale: 2 }).notNull(),
+  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Relations
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   users: many(users),
@@ -146,6 +178,8 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   timeEntries: many(timeEntries),
   notes: many(notes),
   contacts: many(contacts),
+  invoices: many(invoices),
+  invoiceLineItems: many(invoiceLineItems),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -182,6 +216,7 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
   tickets: many(tickets),
   contacts: many(contacts),
   notes: many(notes),
+  invoices: many(invoices),
 }));
 
 export const contactsRelations = relations(contacts, ({ one }) => ({
@@ -212,7 +247,7 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   notes: many(notes),
 }));
 
-export const timeEntriesRelations = relations(timeEntries, ({ one }) => ({
+export const timeEntriesRelations = relations(timeEntries, ({ one, many }) => ({
   organization: one(organizations, {
     fields: [timeEntries.organizationId],
     references: [organizations.id],
@@ -225,6 +260,7 @@ export const timeEntriesRelations = relations(timeEntries, ({ one }) => ({
     fields: [timeEntries.userId],
     references: [users.id],
   }),
+  invoiceLineItems: many(invoiceLineItems),
 }));
 
 export const notesRelations = relations(notes, ({ one }) => ({
@@ -243,6 +279,33 @@ export const notesRelations = relations(notes, ({ one }) => ({
   user: one(users, {
     fields: [notes.userId],
     references: [users.id],
+  }),
+}));
+
+export const invoicesRelations = relations(invoices, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [invoices.organizationId],
+    references: [organizations.id],
+  }),
+  client: one(clients, {
+    fields: [invoices.clientId],
+    references: [clients.id],
+  }),
+  lineItems: many(invoiceLineItems),
+}));
+
+export const invoiceLineItemsRelations = relations(invoiceLineItems, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [invoiceLineItems.organizationId],
+    references: [organizations.id],
+  }),
+  invoice: one(invoices, {
+    fields: [invoiceLineItems.invoiceId],
+    references: [invoices.id],
+  }),
+  timeEntry: one(timeEntries, {
+    fields: [invoiceLineItems.timeEntryId],
+    references: [timeEntries.id],
   }),
 }));
 
@@ -267,3 +330,7 @@ export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
 export type VerificationToken = typeof verificationTokens.$inferSelect;
 export type NewVerificationToken = typeof verificationTokens.$inferInsert;
+export type Invoice = typeof invoices.$inferSelect;
+export type NewInvoice = typeof invoices.$inferInsert;
+export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;
+export type NewInvoiceLineItem = typeof invoiceLineItems.$inferInsert;

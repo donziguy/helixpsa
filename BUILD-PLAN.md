@@ -33,11 +33,11 @@
 - [x] **3.1** PostgreSQL + Drizzle ORM schema — organizations, users, tickets, clients, time_entries, notes, contacts. Row-level security via org_id on every table. Use PostgreSQL 17 with PgBouncer for connection pooling. Docker Compose service alongside the app. ✅
 - [x] **3.2** Auth.js setup — email/password login, session management, org-scoped sessions. JWT with org_id claim. Login/register pages. ✅
 - [x] **3.3** tRPC API layer — type-safe CRUD for tickets, clients, time entries. All queries filtered by session org_id. Zod validation on all inputs. ✅
-- [ ] **3.4** Redis + real-time updates — Redis for session store, caching, and pub-sub. WebSocket via Socket.io or Hocuspocus for ticket changes across tabs/users.
-- [ ] **3.5** Seed data + migration — Drizzle migrations, realistic MSP seed dataset (2 orgs, 5 users, 50 tickets, 20 clients, 200 time entries). Script to reset/reseed.
+- [x] **3.4** Redis + real-time updates — Redis for session store, caching, and pub-sub. WebSocket via Socket.io or Hocuspocus for ticket changes across tabs/users.
+- [x] **3.5** Seed data + migration — Drizzle migrations, realistic MSP seed dataset (2 orgs, 5 users, 50 tickets, 20 clients, 200 time entries). Script to reset/reseed. ✅
 
 ### Phase 4 — Business Features (Sprint 4)
-- [ ] **4.1** Billing page — invoice generation from time entries, hourly rates per client
+- [x] **4.1** Billing page — invoice generation from time entries, hourly rates per client ✅
 - [ ] **4.2** SLA engine — configurable SLA policies per client/priority, breach alerts
 - [ ] **4.3** Asset management page — devices, software, per-client inventory
 - [ ] **4.4** Schedule/dispatch view — calendar with tech assignments
@@ -59,9 +59,11 @@
 6. Restart: `docker rm -f helixpsa helixpsa-tunnel && docker run ... (see deploy script)`
 
 ## Current Status
-- **Last build:** v1.1 (3.3 complete — tRPC API layer with type-safe CRUD operations)
+- **Last build:** v1.4 (4.1 complete — Billing page with invoice generation from time entries, hourly rates per client)
 - **Authentication:** Complete NextAuth.js integration with credentials provider, middleware protection, user sessions, and logout functionality
 - **Database:** PostgreSQL with complete schema (orgs, users, tickets, clients, time entries, notes, contacts) and organization-scoped security
 - **API:** Full tRPC implementation with protected procedures, input validation via Zod, and organization filtering on all operations
-- **Features:** Comprehensive CRUD operations for tickets, clients, time entries, and users with advanced features like timer management, filtering, search, and aggregated statistics
-- **Next up:** 3.4 (Redis + real-time updates — session store, caching, and WebSocket pub-sub for real-time collaboration)
+- **Real-time:** Redis for caching and pub-sub, Socket.io for real-time updates across sessions, comprehensive event system for tickets and time entries
+- **Features:** Comprehensive CRUD operations with live updates, timer management, filtering, search, aggregated statistics, and real-time collaboration
+- **Data:** Enhanced seeding system with realistic MSP data (2 orgs, 5 users, 20 clients, 50 tickets, 200+ time entries), migration support, and convenient reset script
+- **Next up:** 4.2 (SLA engine — configurable SLA policies per client/priority, breach alerts)
