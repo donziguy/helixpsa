@@ -6,6 +6,12 @@ export const priorityEnum = pgEnum('priority', ['critical', 'high', 'medium', 'l
 export const statusEnum = pgEnum('status', ['open', 'in_progress', 'waiting', 'resolved', 'closed']);
 export const slaHealthEnum = pgEnum('sla_health', ['good', 'warning', 'breach']);
 export const slaTierEnum = pgEnum('sla_tier', ['Enterprise', 'Premium', 'Standard']);
+export const slaAlertTypeEnum = pgEnum('sla_alert_type', ['breach', 'warning', 'escalation']);
+export const slaAlertStatusEnum = pgEnum('sla_alert_status', ['active', 'acknowledged', 'resolved']);
+export const assetTypeEnum = pgEnum('asset_type', ['hardware', 'software', 'network', 'mobile', 'peripherals', 'server', 'other']);
+export const assetStatusEnum = pgEnum('asset_status', ['active', 'inactive', 'maintenance', 'retired', 'lost_stolen']);
+export const articleStatusEnum = pgEnum('article_status', ['draft', 'published', 'archived']);
+export const articleTypeEnum = pgEnum('article_type', ['how_to', 'troubleshooting', 'faq', 'procedure', 'policy', 'reference']);
 
 // Organizations table (multi-tenancy)
 export const organizations = pgTable('organizations', {
@@ -170,6 +176,132 @@ export const invoiceLineItems = pgTable('invoice_line_items', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// SLA Policies table
+export const slaPolicies = pgTable('sla_policies', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  slaTier: slaTierEnum('sla_tier').notNull(),
+  priority: priorityEnum('priority').notNull(),
+  responseTimeMinutes: integer('response_time_minutes').notNull(), // Response time in minutes
+  resolutionTimeMinutes: integer('resolution_time_minutes').notNull(), // Resolution time in minutes
+  warningThresholdPercent: integer('warning_threshold_percent').notNull().default(80), // % of time elapsed before warning
+  escalationTimeMinutes: integer('escalation_time_minutes'), // Auto-escalation time (optional)
+  businessHoursOnly: boolean('business_hours_only').notNull().default(false),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// SLA Alerts table
+export const slaAlerts = pgTable('sla_alerts', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  ticketId: uuid('ticket_id').notNull().references(() => tickets.id, { onDelete: 'cascade' }),
+  policyId: uuid('policy_id').notNull().references(() => slaPolicies.id, { onDelete: 'cascade' }),
+  alertType: slaAlertTypeEnum('alert_type').notNull(),
+  status: slaAlertStatusEnum('status').notNull().default('active'),
+  message: text('message').notNull(),
+  deadlineAt: timestamp('deadline_at').notNull(),
+  acknowledgedBy: uuid('acknowledged_by').references(() => users.id, { onDelete: 'set null' }),
+  acknowledgedAt: timestamp('acknowledged_at'),
+  resolvedAt: timestamp('resolved_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Assets table
+export const assets = pgTable('assets', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  clientId: uuid('client_id').notNull().references(() => clients.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  type: assetTypeEnum('type').notNull(),
+  status: assetStatusEnum('status').notNull().default('active'),
+  serialNumber: varchar('serial_number', { length: 255 }),
+  model: varchar('model', { length: 255 }),
+  manufacturer: varchar('manufacturer', { length: 255 }),
+  location: varchar('location', { length: 255 }),
+  assignedTo: varchar('assigned_to', { length: 255 }),
+  purchaseDate: timestamp('purchase_date'),
+  warrantyExpiry: timestamp('warranty_expiry'),
+  purchasePrice: decimal('purchase_price', { precision: 10, scale: 2 }),
+  notes: text('notes'),
+  lastMaintenanceDate: timestamp('last_maintenance_date'),
+  nextMaintenanceDate: timestamp('next_maintenance_date'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Knowledge Base Articles table
+export const knowledgeArticles = pgTable('knowledge_articles', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 500 }).notNull(),
+  content: text('content').notNull(),
+  summary: text('summary'),
+  type: articleTypeEnum('type').notNull().default('reference'),
+  status: articleStatusEnum('status').notNull().default('draft'),
+  tags: varchar('tags', { length: 1000 }), // JSON array of strings
+  authorId: uuid('author_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  viewCount: integer('view_count').notNull().default(0),
+  lastViewedAt: timestamp('last_viewed_at'),
+  searchVector: text('search_vector'), // For full-text search
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  publishedAt: timestamp('published_at'),
+});
+
+// Knowledge Base Article Links to Tickets
+export const articleTicketLinks = pgTable('article_ticket_links', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  articleId: uuid('article_id').notNull().references(() => knowledgeArticles.id, { onDelete: 'cascade' }),
+  ticketId: uuid('ticket_id').notNull().references(() => tickets.id, { onDelete: 'cascade' }),
+  createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Email configurations table
+export const emailConfigurations = pgTable('email_configurations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  imapHost: varchar('imap_host', { length: 255 }).notNull(),
+  imapPort: integer('imap_port').notNull().default(993),
+  imapSecure: boolean('imap_secure').notNull().default(true),
+  email: varchar('email', { length: 255 }).notNull(),
+  password: varchar('password', { length: 500 }).notNull(), // Encrypted
+  defaultClientId: uuid('default_client_id').references(() => clients.id, { onDelete: 'set null' }),
+  defaultAssigneeId: uuid('default_assignee_id').references(() => users.id, { onDelete: 'set null' }),
+  defaultPriority: priorityEnum('default_priority').notNull().default('medium'),
+  folderName: varchar('folder_name', { length: 255 }).notNull().default('INBOX'),
+  lastProcessedUid: integer('last_processed_uid').default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  autoAssignBySubject: boolean('auto_assign_by_subject').notNull().default(false),
+  subjectClientMappings: text('subject_client_mappings'), // JSON object for client mappings
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Email processing log table
+export const emailProcessingLogs = pgTable('email_processing_logs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  configurationId: uuid('configuration_id').notNull().references(() => emailConfigurations.id, { onDelete: 'cascade' }),
+  ticketId: uuid('ticket_id').references(() => tickets.id, { onDelete: 'set null' }),
+  emailUid: integer('email_uid').notNull(),
+  fromEmail: varchar('from_email', { length: 255 }).notNull(),
+  subject: varchar('subject', { length: 500 }).notNull(),
+  messageId: varchar('message_id', { length: 255 }).unique(),
+  status: varchar('status', { length: 50 }).notNull(), // 'processed', 'failed', 'duplicate', 'filtered'
+  errorMessage: text('error_message'),
+  processedAt: timestamp('processed_at').notNull().defaultNow(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 // Relations
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   users: many(users),
@@ -180,6 +312,13 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   contacts: many(contacts),
   invoices: many(invoices),
   invoiceLineItems: many(invoiceLineItems),
+  slaPolicies: many(slaPolicies),
+  slaAlerts: many(slaAlerts),
+  assets: many(assets),
+  knowledgeArticles: many(knowledgeArticles),
+  articleTicketLinks: many(articleTicketLinks),
+  emailConfigurations: many(emailConfigurations),
+  emailProcessingLogs: many(emailProcessingLogs),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -192,6 +331,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   notes: many(notes),
   accounts: many(accounts),
   sessions: many(sessions),
+  knowledgeArticles: many(knowledgeArticles),
+  articleTicketLinksCreated: many(articleTicketLinks),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -217,6 +358,7 @@ export const clientsRelations = relations(clients, ({ one, many }) => ({
   contacts: many(contacts),
   notes: many(notes),
   invoices: many(invoices),
+  assets: many(assets),
 }));
 
 export const contactsRelations = relations(contacts, ({ one }) => ({
@@ -245,6 +387,7 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   }),
   timeEntries: many(timeEntries),
   notes: many(notes),
+  articleLinks: many(articleTicketLinks),
 }));
 
 export const timeEntriesRelations = relations(timeEntries, ({ one, many }) => ({
@@ -309,6 +452,106 @@ export const invoiceLineItemsRelations = relations(invoiceLineItems, ({ one }) =
   }),
 }));
 
+export const slaPoliciesRelations = relations(slaPolicies, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [slaPolicies.organizationId],
+    references: [organizations.id],
+  }),
+  alerts: many(slaAlerts),
+}));
+
+export const slaAlertsRelations = relations(slaAlerts, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [slaAlerts.organizationId],
+    references: [organizations.id],
+  }),
+  ticket: one(tickets, {
+    fields: [slaAlerts.ticketId],
+    references: [tickets.id],
+  }),
+  policy: one(slaPolicies, {
+    fields: [slaAlerts.policyId],
+    references: [slaPolicies.id],
+  }),
+  acknowledgedByUser: one(users, {
+    fields: [slaAlerts.acknowledgedBy],
+    references: [users.id],
+  }),
+}));
+
+export const assetsRelations = relations(assets, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [assets.organizationId],
+    references: [organizations.id],
+  }),
+  client: one(clients, {
+    fields: [assets.clientId],
+    references: [clients.id],
+  }),
+}));
+
+export const knowledgeArticlesRelations = relations(knowledgeArticles, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [knowledgeArticles.organizationId],
+    references: [organizations.id],
+  }),
+  author: one(users, {
+    fields: [knowledgeArticles.authorId],
+    references: [users.id],
+  }),
+  ticketLinks: many(articleTicketLinks),
+}));
+
+export const articleTicketLinksRelations = relations(articleTicketLinks, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [articleTicketLinks.organizationId],
+    references: [organizations.id],
+  }),
+  article: one(knowledgeArticles, {
+    fields: [articleTicketLinks.articleId],
+    references: [knowledgeArticles.id],
+  }),
+  ticket: one(tickets, {
+    fields: [articleTicketLinks.ticketId],
+    references: [tickets.id],
+  }),
+  createdBy: one(users, {
+    fields: [articleTicketLinks.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const emailConfigurationsRelations = relations(emailConfigurations, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [emailConfigurations.organizationId],
+    references: [organizations.id],
+  }),
+  defaultClient: one(clients, {
+    fields: [emailConfigurations.defaultClientId],
+    references: [clients.id],
+  }),
+  defaultAssignee: one(users, {
+    fields: [emailConfigurations.defaultAssigneeId],
+    references: [users.id],
+  }),
+  processingLogs: many(emailProcessingLogs),
+}));
+
+export const emailProcessingLogsRelations = relations(emailProcessingLogs, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [emailProcessingLogs.organizationId],
+    references: [organizations.id],
+  }),
+  configuration: one(emailConfigurations, {
+    fields: [emailProcessingLogs.configurationId],
+    references: [emailConfigurations.id],
+  }),
+  ticket: one(tickets, {
+    fields: [emailProcessingLogs.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
 // Type exports for use in the application
 export type Organization = typeof organizations.$inferSelect;
 export type NewOrganization = typeof organizations.$inferInsert;
@@ -334,3 +577,17 @@ export type Invoice = typeof invoices.$inferSelect;
 export type NewInvoice = typeof invoices.$inferInsert;
 export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;
 export type NewInvoiceLineItem = typeof invoiceLineItems.$inferInsert;
+export type SlaPolicy = typeof slaPolicies.$inferSelect;
+export type NewSlaPolicy = typeof slaPolicies.$inferInsert;
+export type SlaAlert = typeof slaAlerts.$inferSelect;
+export type NewSlaAlert = typeof slaAlerts.$inferInsert;
+export type Asset = typeof assets.$inferSelect;
+export type NewAsset = typeof assets.$inferInsert;
+export type KnowledgeArticle = typeof knowledgeArticles.$inferSelect;
+export type NewKnowledgeArticle = typeof knowledgeArticles.$inferInsert;
+export type ArticleTicketLink = typeof articleTicketLinks.$inferSelect;
+export type NewArticleTicketLink = typeof articleTicketLinks.$inferInsert;
+export type EmailConfiguration = typeof emailConfigurations.$inferSelect;
+export type NewEmailConfiguration = typeof emailConfigurations.$inferInsert;
+export type EmailProcessingLog = typeof emailProcessingLogs.$inferSelect;
+export type NewEmailProcessingLog = typeof emailProcessingLogs.$inferInsert;

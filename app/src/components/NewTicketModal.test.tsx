@@ -2,6 +2,23 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@/test/test-utils';
 import NewTicketModal from './NewTicketModal';
 
+// Mock TimeEstimationPanel
+vi.mock('./TimeEstimationPanel', () => ({
+  default: vi.fn(({ title, description, onEstimateUpdate }) => (
+    <div data-testid="time-estimation-panel">
+      <span>Time Estimation Panel</span>
+      <button 
+        onClick={() => onEstimateUpdate?.(2.5)}
+        data-testid="mock-estimate-button"
+      >
+        Set Estimate
+      </button>
+      <span>Title: {title}</span>
+      <span>Description: {description}</span>
+    </div>
+  )),
+}));
+
 describe('NewTicketModal', () => {
   const makeProps = () => ({
     isOpen: true,
@@ -56,6 +73,13 @@ describe('NewTicketModal', () => {
     render(<NewTicketModal {...props} />);
     expect(screen.getAllByText('Description').length).toBeGreaterThan(0);
     expect(screen.getAllByPlaceholderText('Additional details about the issue...').length).toBeGreaterThan(0);
+  });
+
+  it('renders time estimation panel', () => {
+    const props = makeProps();
+    render(<NewTicketModal {...props} />);
+    expect(screen.getByTestId('time-estimation-panel')).toBeInTheDocument();
+    expect(screen.getByText('Time Estimation Panel')).toBeInTheDocument();
   });
 
   it('renders footer with cancel and submit buttons', () => {
@@ -134,5 +158,85 @@ describe('NewTicketModal', () => {
     expect(screen.getAllByText('Acme Corp').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Globex Industries').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Wayne Enterprises').length).toBeGreaterThan(0);
+  });
+
+  it('submits form with correct data', () => {
+    const props = makeProps();
+    render(<NewTicketModal {...props} />);
+    
+    // Fill out form
+    fireEvent.change(screen.getAllByPlaceholderText('Brief description of the issue')[0], {
+      target: { value: 'Test ticket title' }
+    });
+    fireEvent.change(screen.getAllByDisplayValue('Select client...')[0], {
+      target: { value: 'Acme Corp' }
+    });
+    fireEvent.change(screen.getAllByDisplayValue('Cory S.')[0], {
+      target: { value: 'Mike T.' }
+    });
+    fireEvent.click(screen.getAllByText('High')[0]);
+    fireEvent.change(screen.getAllByPlaceholderText('Additional details about the issue...')[0], {
+      target: { value: 'Test description' }
+    });
+    
+    // Submit
+    fireEvent.click(screen.getAllByText('Create Ticket')[0]);
+    
+    expect(props.onSubmit).toHaveBeenCalledWith({
+      title: 'Test ticket title',
+      client: 'Acme Corp',
+      assignee: 'Mike T.',
+      priority: 'high',
+      description: 'Test description',
+      sla: '24h remaining',
+      estimatedHours: undefined,
+    });
+    expect(props.onClose).toHaveBeenCalled();
+  });
+
+  it('submits form with estimated hours when provided', () => {
+    const props = makeProps();
+    render(<NewTicketModal {...props} />);
+    
+    // Fill out form
+    fireEvent.change(screen.getAllByPlaceholderText('Brief description of the issue')[0], {
+      target: { value: 'Test ticket title' }
+    });
+    fireEvent.change(screen.getAllByDisplayValue('Select client...')[0], {
+      target: { value: 'Acme Corp' }
+    });
+    
+    // Set estimate via TimeEstimationPanel
+    fireEvent.click(screen.getByTestId('mock-estimate-button'));
+    
+    // Submit
+    fireEvent.click(screen.getAllByText('Create Ticket')[0]);
+    
+    expect(props.onSubmit).toHaveBeenCalledWith({
+      title: 'Test ticket title',
+      client: 'Acme Corp',
+      assignee: 'Cory S.',
+      priority: 'medium',
+      description: '',
+      sla: '24h remaining',
+      estimatedHours: 2.5,
+    });
+    expect(props.onClose).toHaveBeenCalled();
+  });
+
+  it('passes title and description to time estimation panel', () => {
+    const props = makeProps();
+    render(<NewTicketModal {...props} />);
+    
+    // Fill out title and description
+    fireEvent.change(screen.getAllByPlaceholderText('Brief description of the issue')[0], {
+      target: { value: 'Network connectivity issue' }
+    });
+    fireEvent.change(screen.getAllByPlaceholderText('Additional details about the issue...')[0], {
+      target: { value: 'Users cannot access the internet' }
+    });
+    
+    expect(screen.getByText('Title: Network connectivity issue')).toBeInTheDocument();
+    expect(screen.getByText('Description: Users cannot access the internet')).toBeInTheDocument();
   });
 });

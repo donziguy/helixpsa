@@ -10,9 +10,12 @@ const navItems = [
   { icon: "👥", label: "Clients", href: "/clients" },
   { icon: "⏱️", label: "Time", href: "/time" },
   { icon: "💰", label: "Billing", href: "/billing" },
+  { icon: "🚨", label: "SLA", href: "/sla" },
   { icon: "📋", label: "Assets", href: "/assets" },
   { icon: "📅", label: "Schedule", href: "/schedule" },
   { icon: "📈", label: "Reports", href: "/reports" },
+  { icon: "📚", label: "Knowledge", href: "/knowledge" },
+  { icon: "📧", label: "Email", href: "/email" },
 ];
 
 const bottomItems = [

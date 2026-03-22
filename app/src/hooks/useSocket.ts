@@ -144,7 +144,7 @@ export function useRealtimeEvent<T extends RealtimeEvent['type']>(
 
     const eventHandler = (event: RealtimeEvent) => {
       if (event.type === eventType) {
-        handler(event.data as Extract<RealtimeEvent, { type: T }>['data'])
+        handler(event.data as any)
       }
     }
 

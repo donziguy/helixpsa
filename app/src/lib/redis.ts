@@ -12,7 +12,6 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379'
 export function getRedis(): Redis {
   if (!redis) {
     redis = new Redis(REDIS_URL, {
-      retryDelayOnFailover: 100,
       enableReadyCheck: false,
       maxRetriesPerRequest: 3,
       lazyConnect: true,
@@ -27,7 +26,6 @@ export function getRedis(): Redis {
 export function getRedisSubscriber(): Redis {
   if (!redisSubscriber) {
     redisSubscriber = new Redis(REDIS_URL, {
-      retryDelayOnFailover: 100,
       enableReadyCheck: false,
       maxRetriesPerRequest: 3,
       lazyConnect: true,
@@ -42,7 +40,6 @@ export function getRedisSubscriber(): Redis {
 export function getRedisPublisher(): Redis {
   if (!redisPublisher) {
     redisPublisher = new Redis(REDIS_URL, {
-      retryDelayOnFailover: 100,
       enableReadyCheck: false,
       maxRetriesPerRequest: 3,
       lazyConnect: true,

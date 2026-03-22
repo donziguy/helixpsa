@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { clients, priorityConfig, type Priority, type Ticket } from "@/lib/mock-data";
+import TimeEstimationPanel from "./TimeEstimationPanel";
 
 interface NewTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (ticket: Omit<Ticket, "id" | "number" | "status" | "created" | "updated" | "timeSpent">) => void;
+  onSubmit: (ticket: Omit<Ticket, "id" | "number" | "status" | "created" | "updated" | "timeSpent"> & { estimatedHours?: number }) => void;
 }
 
 const assignees = ["Cory S.", "Mike T.", "Jake R."];
@@ -18,6 +19,7 @@ export default function NewTicketModal({ isOpen, onClose, onSubmit }: NewTicketM
   const [priority, setPriority] = useState<Priority>("medium");
   const [description, setDescription] = useState("");
   const [sla, setSla] = useState("24h remaining");
+  const [estimatedHours, setEstimatedHours] = useState<number | undefined>();
   const titleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -29,6 +31,7 @@ export default function NewTicketModal({ isOpen, onClose, onSubmit }: NewTicketM
       setPriority("medium");
       setDescription("");
       setSla("24h remaining");
+      setEstimatedHours(undefined);
       // Focus title field
       setTimeout(() => titleRef.current?.focus(), 50);
     }
@@ -53,6 +56,7 @@ export default function NewTicketModal({ isOpen, onClose, onSubmit }: NewTicketM
       priority,
       description: description.trim(),
       sla,
+      estimatedHours,
     });
 
     onClose();
@@ -236,6 +240,16 @@ export default function NewTicketModal({ isOpen, onClose, onSubmit }: NewTicketM
                 }}
                 onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; }}
                 onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
+              />
+            </div>
+
+            {/* Time Estimation */}
+            <div>
+              <TimeEstimationPanel
+                title={title}
+                description={description}
+                currentEstimate={estimatedHours}
+                onEstimateUpdate={setEstimatedHours}
               />
             </div>
           </div>

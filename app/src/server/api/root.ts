@@ -4,6 +4,14 @@ import { clientsRouter } from "./routers/clients"
 import { timeEntriesRouter } from "./routers/time-entries"
 import { usersRouter } from "./routers/users"
 import { billingRouter } from "./routers/billing"
+import { slaRouter } from "./routers/sla"
+import { assetsRouter } from "./routers/assets"
+import { scheduleRouter } from "./routers/schedule"
+import { reportsRouter } from "./routers/reports"
+import { aiRouter } from "./routers/ai"
+import { knowledgeRouter } from "./routers/knowledge"
+import { emailRouter } from "./routers/email"
+import { portalRouter } from "./routers/portal"
 
 /**
  * This is the primary router for your server.
@@ -16,6 +24,14 @@ export const appRouter = createTRPCRouter({
   timeEntries: timeEntriesRouter,
   users: usersRouter,
   billing: billingRouter,
+  sla: slaRouter,
+  assets: assetsRouter,
+  schedule: scheduleRouter,
+  reports: reportsRouter,
+  ai: aiRouter,
+  knowledge: knowledgeRouter,
+  email: emailRouter,
+  portal: portalRouter,
 })
 
 // export type definition of API

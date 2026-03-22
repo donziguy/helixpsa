@@ -2,7 +2,8 @@ import { Server as IOServer, Socket } from 'socket.io'
 import { Server as HTTPServer } from 'http'
 import { NextApiRequest } from 'next'
 import { auth } from '@/lib/auth'
-import { channels, pubsub, realtimeUtils } from './realtime'
+import { channels, realtimeUtils } from './realtime'
+import { pubsub } from './redis'
 import type { RealtimeEvent } from './realtime'
 
 export interface SocketData {

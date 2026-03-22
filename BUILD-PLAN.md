@@ -38,17 +38,17 @@
 
 ### Phase 4 — Business Features (Sprint 4)
 - [x] **4.1** Billing page — invoice generation from time entries, hourly rates per client ✅
-- [ ] **4.2** SLA engine — configurable SLA policies per client/priority, breach alerts
-- [ ] **4.3** Asset management page — devices, software, per-client inventory
-- [ ] **4.4** Schedule/dispatch view — calendar with tech assignments
-- [ ] **4.5** Reports page — charts for ticket volume, resolution time, revenue
+- [x] **4.2** SLA engine — configurable SLA policies per client/priority, breach alerts ✅
+- [x] **4.3** Asset management page — devices, software, per-client inventory ✅
+- [x] **4.4** Schedule/dispatch view — calendar with tech assignments ✅
+- [x] **4.5** Reports page — charts for ticket volume, resolution time, revenue
 
 ### Phase 5 — AI & Advanced (Sprint 5)
-- [ ] **5.1** AI ticket triage — auto-categorize, suggest priority/assignee
-- [ ] **5.2** AI time suggestions — estimate time from ticket description
-- [ ] **5.3** Knowledge base — searchable articles, link to tickets
-- [ ] **5.4** Email-to-ticket — IMAP integration, auto-create tickets from client emails
-- [ ] **5.5** Client portal — external view for clients to submit/track tickets
+- [x] **5.1** AI ticket triage — auto-categorize, suggest priority/assignee ✅
+- [x] **5.2** AI time suggestions — estimate time from ticket description ✅
+- [x] **5.3** Knowledge base — searchable articles, link to tickets ✅
+- [x] **5.4** Email-to-ticket — IMAP integration, auto-create tickets from client emails ✅
+- [x] **5.5** Client portal — external view for clients to submit/track tickets ✅
 
 ## Deploy Process
 1. Build: `cd app && npx next build`
@@ -59,11 +59,14 @@
 6. Restart: `docker rm -f helixpsa helixpsa-tunnel && docker run ... (see deploy script)`
 
 ## Current Status
-- **Last build:** v1.4 (4.1 complete — Billing page with invoice generation from time entries, hourly rates per client)
-- **Authentication:** Complete NextAuth.js integration with credentials provider, middleware protection, user sessions, and logout functionality
-- **Database:** PostgreSQL with complete schema (orgs, users, tickets, clients, time entries, notes, contacts) and organization-scoped security
-- **API:** Full tRPC implementation with protected procedures, input validation via Zod, and organization filtering on all operations
+- **Last build:** v2.3 (5.5 complete — Client portal for external ticket submission and tracking with client authentication, ticket management, and public note system)
+- **Authentication:** Complete NextAuth.js integration with credentials provider, middleware protection, user sessions, logout functionality, and client portal authentication
+- **Database:** PostgreSQL with complete schema including reports/analytics queries, organization-scoped security, email configuration and processing log tables
+- **API:** Full tRPC implementation with protected procedures, input validation via Zod, AI router with intelligent ticket analysis and suggestions, email router for IMAP management, portal router for client access
 - **Real-time:** Redis for caching and pub-sub, Socket.io for real-time updates across sessions, comprehensive event system for tickets and time entries
-- **Features:** Comprehensive CRUD operations with live updates, timer management, filtering, search, aggregated statistics, and real-time collaboration
+- **Features:** Comprehensive CRUD operations with live updates, timer management, filtering, search, aggregated statistics, SLA monitoring and alerting, analytics dashboard with interactive charts, AI-powered ticket triage, email-to-ticket automation, client portal
 - **Data:** Enhanced seeding system with realistic MSP data (2 orgs, 5 users, 20 clients, 50 tickets, 200+ time entries), migration support, and convenient reset script
-- **Next up:** 4.2 (SLA engine — configurable SLA policies per client/priority, breach alerts)
+- **AI System:** Rule-based ticket categorization, priority analysis, assignee suggestions with workload balancing, time estimation from historical data, and dashboard insights
+- **Email Integration:** IMAP email monitoring with encrypted password storage, configurable client routing, intelligent ticket creation, processing logs with statistics, and comprehensive management interface
+- **Client Portal:** External portal at /portal with client authentication via email + client ID, ticket submission, tracking, status viewing, and public note system (internal notes hidden from clients)
+- **Next up:** All Phase 5 features complete! Ready for production deployment and user testing.

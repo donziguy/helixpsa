@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { createTRPCRouter, protectedProcedure } from "../trpc"
-import { tickets, clients, users, timeEntries } from "@/db/schema"
+import { tickets, clients, users, timeEntries, slaPolicies, slaAlerts } from "@/db/schema"
 import { and, eq, desc, asc, count, sum, isNotNull, sql } from "drizzle-orm"
 import { TRPCError } from "@trpc/server"
 import { events } from "@/lib/realtime"
@@ -33,6 +33,68 @@ const ticketFiltersSchema = z.object({
   search: z.string().optional(),
 })
 
+// Helper function to calculate SLA deadline and create alerts
+async function calculateSlaDeadlineAndCreateAlerts(
+  db: any, 
+  organizationId: string, 
+  client: any, 
+  priority: string, 
+  ticketId: string,
+  createdAt: Date = new Date()
+) {
+  // Find applicable SLA policy
+  const policy = await db
+    .select()
+    .from(slaPolicies)
+    .where(and(
+      eq(slaPolicies.organizationId, organizationId),
+      eq(slaPolicies.slaTier, client.slaTier as any),
+      eq(slaPolicies.priority, priority as any),
+      eq(slaPolicies.isActive, true)
+    ))
+    .then((rows: any[]) => rows[0])
+
+  if (!policy) {
+    return null // No SLA policy defined
+  }
+
+  // Calculate deadlines
+  const resolutionDeadline = new Date(createdAt.getTime() + (policy.resolutionTimeMinutes * 60 * 1000))
+  const warningTime = new Date(createdAt.getTime() + (policy.resolutionTimeMinutes * 60 * 1000 * policy.warningThresholdPercent / 100))
+
+  // Create warning alert if we're past the warning threshold
+  if (new Date() >= warningTime) {
+    await db
+      .insert(slaAlerts)
+      .values({
+        organizationId,
+        ticketId,
+        policyId: policy.id,
+        alertType: 'warning',
+        message: `Ticket ${priority} priority is approaching SLA deadline. ${Math.round((policy.resolutionTimeMinutes * (100 - policy.warningThresholdPercent) / 100))} minutes remaining.`,
+        deadlineAt: resolutionDeadline,
+      })
+      .catch(() => {}) // Ignore duplicates
+  }
+
+  // Create breach alert if we're past the deadline
+  if (new Date() >= resolutionDeadline) {
+    await db
+      .insert(slaAlerts)
+      .values({
+        organizationId,
+        ticketId,
+        policyId: policy.id,
+        alertType: 'breach',
+        message: `SLA BREACH: ${policy.slaTier} ${priority} ticket has exceeded ${Math.round(policy.resolutionTimeMinutes / 60)}h resolution time.`,
+        deadlineAt: resolutionDeadline,
+      })
+      .catch(() => {}) // Ignore duplicates
+  }
+
+  return resolutionDeadline
+}
+
 export const ticketsRouter = createTRPCRouter({
   // Get all tickets for the organization with filters
   getAll: protectedProcedure
@@ -51,7 +113,7 @@ export const ticketsRouter = createTRPCRouter({
         conditions.push(eq(tickets.status, input.status))
       }
       if (input.priority) {
-        conditions.push(eq(tickets.priority, input.priority))
+        conditions.push(eq(tickets.priority, input.priority as any))
       }
 
       let query = ctx.db
@@ -200,6 +262,17 @@ export const ticketsRouter = createTRPCRouter({
 
       const ticketNumber = `PSA-${String(ticketCount + 1).padStart(5, '0')}`
 
+      // Calculate SLA deadline
+      const createdAt = new Date()
+      const slaDeadline = await calculateSlaDeadlineAndCreateAlerts(
+        ctx.db, 
+        ctx.organizationId, 
+        client, 
+        input.priority, 
+        '', // We'll update this after creation
+        createdAt
+      )
+
       // Create the ticket
       const [newTicket] = await ctx.db
         .insert(tickets)
@@ -212,8 +285,22 @@ export const ticketsRouter = createTRPCRouter({
           assigneeId: input.assigneeId,
           priority: input.priority,
           estimatedHours: input.estimatedHours?.toString(),
+          slaDeadline,
+          createdAt,
         })
         .returning()
+
+      // Now create SLA alerts with the actual ticket ID
+      if (slaDeadline) {
+        await calculateSlaDeadlineAndCreateAlerts(
+          ctx.db, 
+          ctx.organizationId, 
+          client, 
+          input.priority, 
+          newTicket.id,
+          createdAt
+        )
+      }
 
       // Emit real-time event
       await events.emitTicketEvent({
@@ -394,6 +481,114 @@ export const ticketsRouter = createTRPCRouter({
       return {
         statusCounts,
         todayHours: Math.round((todayTime / 60) * 100) / 100,
+      }
+    }),
+
+  // Check for SLA breaches and create alerts
+  checkSlaBreaches: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      // Get all open/in-progress tickets with SLA deadlines
+      const ticketsWithSla = await ctx.db
+        .select({
+          id: tickets.id,
+          number: tickets.number,
+          title: tickets.title,
+          priority: tickets.priority,
+          slaDeadline: tickets.slaDeadline,
+          createdAt: tickets.createdAt,
+          client: {
+            id: clients.id,
+            name: clients.name,
+            slaTier: clients.slaTier,
+          },
+        })
+        .from(tickets)
+        .leftJoin(clients, eq(tickets.clientId, clients.id))
+        .where(and(
+          eq(tickets.organizationId, ctx.organizationId),
+          sql`${tickets.status} IN ('open', 'in_progress')`,
+          isNotNull(tickets.slaDeadline)
+        ))
+
+      let alertsCreated = 0
+      const now = new Date()
+
+      for (const ticket of ticketsWithSla) {
+        if (!ticket.slaDeadline || !ticket.client) continue
+
+        // Find the SLA policy for this ticket
+        const policy = await ctx.db
+          .select()
+          .from(slaPolicies)
+          .where(and(
+            eq(slaPolicies.organizationId, ctx.organizationId),
+            eq(slaPolicies.slaTier, ticket.client.slaTier as any),
+            eq(slaPolicies.priority, ticket.priority as any),
+            eq(slaPolicies.isActive, true)
+          ))
+          .then(rows => rows[0])
+
+        if (!policy) continue
+
+        // Check if we already have alerts for this ticket
+        const existingAlerts = await ctx.db
+          .select()
+          .from(slaAlerts)
+          .where(and(
+            eq(slaAlerts.ticketId, ticket.id),
+            eq(slaAlerts.policyId, policy.id)
+          ))
+
+        const hasWarning = existingAlerts.some(a => a.alertType === 'warning')
+        const hasBreach = existingAlerts.some(a => a.alertType === 'breach')
+
+        // Calculate warning threshold time
+        const warningTime = new Date(ticket.createdAt.getTime() + (policy.resolutionTimeMinutes * 60 * 1000 * policy.warningThresholdPercent / 100))
+
+        // Create warning alert if needed
+        if (!hasWarning && now >= warningTime && now < ticket.slaDeadline) {
+          await ctx.db
+            .insert(slaAlerts)
+            .values({
+              organizationId: ctx.organizationId,
+              ticketId: ticket.id,
+              policyId: policy.id,
+              alertType: 'warning',
+              message: `Ticket ${ticket.number} (${ticket.priority} priority) is approaching SLA deadline. Client: ${ticket.client.name}`,
+              deadlineAt: ticket.slaDeadline,
+            })
+            .catch(() => {}) // Ignore duplicates
+
+          alertsCreated++
+        }
+
+        // Create breach alert if needed
+        if (!hasBreach && now >= ticket.slaDeadline) {
+          await ctx.db
+            .insert(slaAlerts)
+            .values({
+              organizationId: ctx.organizationId,
+              ticketId: ticket.id,
+              policyId: policy.id,
+              alertType: 'breach',
+              message: `SLA BREACH: Ticket ${ticket.number} has exceeded ${Math.round(policy.resolutionTimeMinutes / 60)}h resolution time. Client: ${ticket.client.name}`,
+              deadlineAt: ticket.slaDeadline,
+            })
+            .catch(() => {}) // Ignore duplicates
+
+          alertsCreated++
+
+          // Update client SLA health to breach
+          await ctx.db
+            .update(clients)
+            .set({ slaHealth: 'breach' })
+            .where(eq(clients.id, ticket.client.id))
+        }
+      }
+
+      return {
+        message: `Checked ${ticketsWithSla.length} tickets, created ${alertsCreated} alerts`,
+        alertsCreated
       }
     }),
 })

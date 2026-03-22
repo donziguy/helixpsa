@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { type Ticket, priorityConfig, statusConfig, type Priority } from "@/lib/mock-data";
 import InlineEdit from "./InlineEdit";
+import TimeEstimationPanel from "./TimeEstimationPanel";
 
 interface TicketDetailProps {
   ticket: Ticket | null;
@@ -210,6 +211,16 @@ export default function TicketDetail({ ticket, onClose, onStatusChange, onTicket
                 placeholder="Add a description..."
               />
             </div>
+          </div>
+
+          {/* Time Estimation */}
+          <div style={{ marginBottom: 20 }}>
+            <TimeEstimationPanel
+              title={ticket.title}
+              description={ticket.description}
+              ticketId={ticket.id}
+              onEstimateUpdate={(hours) => onTicketUpdate(ticket.id, { timeSpent: Math.round(hours * 60) })}
+            />
           </div>
 
           {/* Notes / Activity */}
