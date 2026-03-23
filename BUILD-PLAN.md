@@ -41,7 +41,7 @@
 - [x] **4.2** SLA engine — configurable SLA policies per client/priority, breach alerts ✅
 - [x] **4.3** Asset management page — devices, software, per-client inventory ✅
 - [x] **4.4** Schedule/dispatch view — calendar with tech assignments ✅
-- [x] **4.5** [x] Reports page — charts for ticket volume, resolution time, revenue
+- [x] **4.5** Reports page — charts for ticket volume, resolution time, revenue ✅
 
 ### Phase 5 — AI & Advanced (Sprint 5)
 - [x] **5.1** AI ticket triage — auto-categorize, suggest priority/assignee ✅
@@ -50,6 +50,7 @@
 - [x] **5.4** Email-to-ticket — IMAP integration, auto-create tickets from client emails ✅
 - [x] **5.5** Client portal — external view for clients to submit/track tickets ✅
 - [x] **6.1** Dashboard API integration — Replace mock data with real tRPC calls in dashboard components ✅
+- [x] **6.2** Asset warranty/maintenance alerts — Enhanced assets router with warranty expiring soon and maintenance due date tracking. Added getWarrantyExpiringSoon and getMaintenanceDue endpoints for proactive asset management. ✅
 
 ## Deploy Process
 1. Build: `cd app && npx next build`
@@ -72,4 +73,5 @@
 - **Client Portal:** External portal at /portal with client authentication via email + client ID, ticket submission, tracking, status viewing, and public note system (internal notes hidden from clients)
 - **Reports:** Comprehensive analytics with interactive charts for ticket volume, resolution time, revenue analysis, dashboard stats, chart filtering, and top clients sidebar
 - **Dashboard Integration:** Main dashboard and home page now use real tRPC API calls instead of mock data, connecting to PostgreSQL database with proper error handling and loading states
-- **Next up:** All phases complete! Dashboard now fully integrated with backend. Ready for production deployment and user testing.
+- **Latest Update (2026-03-23):** Enhanced asset management with warranty and maintenance tracking! Added smart filtering for assets with warranties expiring within 30 days and maintenance due within 7 days. Implemented new API endpoints getWarrantyExpiringSoon() and getMaintenanceDue() with configurable time windows. Updated asset statistics to show real warranty/maintenance alerts instead of placeholder values.
+- **Next up:** Monitor production performance and implement asset alert notifications. Consider adding email alerts for critical warranty/maintenance dates.

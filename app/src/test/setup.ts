@@ -49,7 +49,16 @@ vi.mock('@/lib/toast-context', () => ({
     toast: vi.fn(),
   }),
   useToastHelpers: () => ({
-    toast: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+    toast: {
+      success: vi.fn(),
+      error: vi.fn(),
+      info: vi.fn(),
+      warning: vi.fn(),
+    },
   }),
 }));
 
@@ -178,6 +187,9 @@ vi.mock('@/utils/api', () => {
       },
       schedule: {
         getSchedule: { useQuery: vi.fn(() => mockQueryResult) },
+        getTechnicians: { useQuery: vi.fn(() => mockQueryResult) },
+        getWorkloadSummary: { useQuery: vi.fn(() => mockQueryResult) },
+        updateAssignment: { useMutation: vi.fn(() => mockMutationResult) },
         createEvent: { useMutation: vi.fn(() => mockMutationResult) },
         updateEvent: { useMutation: vi.fn(() => mockMutationResult) },
         deleteEvent: { useMutation: vi.fn(() => mockMutationResult) },

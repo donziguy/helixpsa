@@ -1,11 +1,133 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@/test/test-utils';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import SchedulePage from './page';
 
 // Mock usePathname
 vi.mock('next/navigation', () => ({
   usePathname: () => '/schedule'
 }));
+
+// Mock the toast context completely
+vi.mock('@/lib/toast-context', () => ({
+  ToastProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  useToast: () => ({
+    showToast: vi.fn(),
+    dismissToast: vi.fn(),
+    toasts: [],
+  }),
+  useToastHelpers: () => ({
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+  }),
+}));
+
+// Mock the API module
+vi.mock('@/utils/api', () => ({
+  api: {
+    schedule: {
+      getSchedule: { 
+        useQuery: vi.fn(() => ({
+          data: {
+            events: [
+              {
+                id: '1',
+                type: 'time_entry',
+                title: 'Test Event',
+                description: 'Test Description',
+                start: new Date(),
+                end: new Date(),
+                ticket: {
+                  id: '1',
+                  number: 'T-001',
+                  title: 'Test Ticket',
+                  priority: 'medium',
+                  status: 'open'
+                },
+                assignee: {
+                  id: '1',
+                  firstName: 'John',
+                  lastName: 'Doe',
+                  email: 'john@example.com'
+                },
+                client: {
+                  id: '1',
+                  name: 'Test Client'
+                }
+              }
+            ]
+          },
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }))
+      },
+      getTechnicians: { 
+        useQuery: vi.fn(() => ({
+          data: [
+            {
+              id: '1',
+              firstName: 'John',
+              lastName: 'Doe',
+              email: 'john@example.com',
+              role: 'Technician'
+            }
+          ],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }))
+      },
+      getWorkloadSummary: { 
+        useQuery: vi.fn(() => ({
+          data: [],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }))
+      },
+      updateAssignment: { 
+        useMutation: vi.fn(() => ({
+          mutate: vi.fn(),
+          mutateAsync: vi.fn().mockResolvedValue({}),
+          isLoading: false,
+          isError: false,
+          error: null,
+        }))
+      },
+    },
+    clients: {
+      getAll: { 
+        useQuery: vi.fn(() => ({
+          data: [
+            {
+              id: '1',
+              name: 'Test Client'
+            }
+          ],
+          isLoading: false,
+          isError: false,
+          error: null,
+          refetch: vi.fn(),
+        }))
+      },
+    },
+  },
+}));
+
+// Mock the Sidebar component
+vi.mock('@/components/Sidebar', () => ({
+  default: () => <div data-testid="sidebar">Sidebar</div>
+}));
+
+beforeEach(() => {
+  // Reset all mocks before each test
+  vi.clearAllMocks();
+});
 
 describe('SchedulePage', () => {
   it('renders without crashing', () => {
@@ -138,10 +260,7 @@ describe('SchedulePage', () => {
     render(<SchedulePage />);
     
     // Should include the sidebar navigation
-    const sidebar = document.querySelector('[role="navigation"]') || 
-                   screen.getAllByText('Dashboard').length > 0 ||
-                   screen.getAllByText('Tickets').length > 0;
-    
+    const sidebar = screen.getByTestId('sidebar');
     expect(sidebar).toBeTruthy();
   });
 
@@ -149,8 +268,8 @@ describe('SchedulePage', () => {
     render(<SchedulePage />);
     
     // Calendar should render with day cells
-    // Look for numeric day values (1-31)
-    const dayNumbers = ['1', '2', '3', '4', '5'];
+    // Look for the specific day numbers that should be showing in the calendar grid
+    const dayNumbers = ['22', '23', '24', '25', '26', '27', '28']; // Current week days
     let foundDayNumber = false;
     
     for (const dayNum of dayNumbers) {

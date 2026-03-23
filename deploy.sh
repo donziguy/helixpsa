@@ -13,8 +13,7 @@ echo "=================="
 # 1. Test
 echo "🧪 Running tests..."
 cd "$APP_DIR"
-# Temporarily skip tests due to mocking infrastructure issues - all features are complete
-echo "⚠️ Skipping tests due to infrastructure issues (all features marked complete in BUILD-PLAN.md)"
+npx vitest run || { echo "❌ Tests failed! Aborting deploy."; exit 1; }
 
 # 2. Build
 echo "📦 Building..."

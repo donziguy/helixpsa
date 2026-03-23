@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { createTRPCRouter, protectedProcedure } from "../trpc"
 import { assets, clients } from "@/db/schema"
-import { and, eq, desc, count, like, or } from "drizzle-orm"
+import { and, eq, desc, count, like, or, lte, isNotNull } from "drizzle-orm"
 import { TRPCError } from "@trpc/server"
 
 // Input validation schemas
@@ -190,21 +190,34 @@ export const assetsRouter = createTRPCRouter({
         stats.byStatus[asset.status] = (stats.byStatus[asset.status] || 0) + 1
       })
 
-      // Get warranty and maintenance alerts separately for performance
+      // Get warranty expiring soon (within 30 days)
       const warrantyExpiringSoon = await ctx.db
         .select({ count: count() })
         .from(assets)
         .where(and(
           eq(assets.organizationId, ctx.organizationId),
-          eq(assets.isActive, true)
+          eq(assets.isActive, true),
+          isNotNull(assets.warrantyExpiry),
+          lte(assets.warrantyExpiry, thirtyDaysFromNow)
         ))
         .then(rows => rows[0]?.count || 0)
 
-      // For now, return basic stats - we can enhance with date filtering later
+      // Get maintenance due (maintenance date passed or within 7 days)
+      const maintenanceDue = await ctx.db
+        .select({ count: count() })
+        .from(assets)
+        .where(and(
+          eq(assets.organizationId, ctx.organizationId),
+          eq(assets.isActive, true),
+          isNotNull(assets.nextMaintenanceDate),
+          lte(assets.nextMaintenanceDate, sevenDaysFromNow)
+        ))
+        .then(rows => rows[0]?.count || 0)
+
       return {
         ...stats,
-        warrantyExpiringSoon: 0, // TODO: Add date filtering
-        maintenanceDue: 0, // TODO: Add date filtering
+        warrantyExpiringSoon: warrantyExpiringSoon,
+        maintenanceDue: maintenanceDue,
       }
     }),
 
@@ -330,5 +343,78 @@ export const assetsRouter = createTRPCRouter({
         .where(eq(assets.id, input.id))
 
       return { success: true }
+    }),
+
+  // Get assets with expiring warranties
+  getWarrantyExpiringSoon: protectedProcedure
+    .input(z.object({
+      daysAhead: z.number().min(1).max(365).default(30),
+      limit: z.number().min(1).max(100).default(50),
+    }))
+    .query(async ({ ctx, input }) => {
+      const futureDate = new Date()
+      futureDate.setDate(futureDate.getDate() + input.daysAhead)
+
+      const assetsWithClient = await ctx.db
+        .select({
+          id: assets.id,
+          name: assets.name,
+          type: assets.type,
+          serialNumber: assets.serialNumber,
+          model: assets.model,
+          manufacturer: assets.manufacturer,
+          warrantyExpiry: assets.warrantyExpiry,
+          clientName: clients.name,
+          clientId: clients.id,
+        })
+        .from(assets)
+        .innerJoin(clients, eq(assets.clientId, clients.id))
+        .where(and(
+          eq(assets.organizationId, ctx.organizationId),
+          eq(assets.isActive, true),
+          isNotNull(assets.warrantyExpiry),
+          lte(assets.warrantyExpiry, futureDate)
+        ))
+        .limit(input.limit)
+        .orderBy(assets.warrantyExpiry)
+
+      return assetsWithClient
+    }),
+
+  // Get assets with maintenance due
+  getMaintenanceDue: protectedProcedure
+    .input(z.object({
+      daysAhead: z.number().min(1).max(365).default(7),
+      limit: z.number().min(1).max(100).default(50),
+    }))
+    .query(async ({ ctx, input }) => {
+      const futureDate = new Date()
+      futureDate.setDate(futureDate.getDate() + input.daysAhead)
+
+      const assetsWithClient = await ctx.db
+        .select({
+          id: assets.id,
+          name: assets.name,
+          type: assets.type,
+          serialNumber: assets.serialNumber,
+          model: assets.model,
+          manufacturer: assets.manufacturer,
+          nextMaintenanceDate: assets.nextMaintenanceDate,
+          lastMaintenanceDate: assets.lastMaintenanceDate,
+          clientName: clients.name,
+          clientId: clients.id,
+        })
+        .from(assets)
+        .innerJoin(clients, eq(assets.clientId, clients.id))
+        .where(and(
+          eq(assets.organizationId, ctx.organizationId),
+          eq(assets.isActive, true),
+          isNotNull(assets.nextMaintenanceDate),
+          lte(assets.nextMaintenanceDate, futureDate)
+        ))
+        .limit(input.limit)
+        .orderBy(assets.nextMaintenanceDate)
+
+      return assetsWithClient
     }),
 })
