@@ -231,6 +231,7 @@ export default function TicketsPage() {
             onStatusChange={handleStatusChange}
             onTicketUpdate={handleTicketUpdate}
             timer={timer}
+            onNewTicket={() => setNewTicketModalOpen(true)}
           />
         </div>
       </main>

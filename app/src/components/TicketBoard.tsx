@@ -11,6 +11,7 @@ interface TicketBoardProps {
   onStatusChange: (ticketId: string, status: Status) => void;
   onTicketUpdate: (ticketId: string, updates: Partial<Ticket>) => void;
   timer: { ticketId: string; seconds: number; running: boolean } | null;
+  onNewTicket?: () => void;
 }
 
 function TicketCard({ ticket, onClick, isDragging, timer, onUpdate, isSelected, cardRef }: {
@@ -129,7 +130,7 @@ const columns: { status: Status; label: string }[] = [
   { status: "resolved", label: "Resolved" },
 ];
 
-export default function TicketBoard({ tickets, onTicketClick, onStatusChange, onTicketUpdate, timer }: TicketBoardProps) {
+export default function TicketBoard({ tickets, onTicketClick, onStatusChange, onTicketUpdate, timer, onNewTicket }: TicketBoardProps) {
   const [view, setView] = useState<"board" | "list">("board");
   const [dragOverColumn, setDragOverColumn] = useState<Status | null>(null);
   const ticketRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
@@ -366,7 +367,7 @@ function BoardHeader({ view, setView, ticketCount, totalTicketCount, clientCount
             >{v}</button>
           ))}
         </div>
-        <button style={{
+        <button onClick={onNewTicket} style={{
           padding: "8px 16px", fontSize: 13, fontWeight: 500,
           background: "var(--accent)", color: "white", border: "none",
           borderRadius: 6, cursor: "pointer", fontFamily: "inherit",
