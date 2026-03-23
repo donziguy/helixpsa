@@ -5,34 +5,41 @@ import Sidebar from "@/components/Sidebar";
 import Dashboard from "@/components/Dashboard";
 import CommandPalette from "@/components/CommandPalette";
 import NewTicketModal from "@/components/NewTicketModal";
-import { tickets as initialTickets, type Ticket } from "@/lib/mock-data";
 import { useToastHelpers } from "@/lib/toast-context";
+import { api } from "@/utils/api";
 
 export default function Home() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [newTicketModalOpen, setNewTicketModalOpen] = useState(false);
-  const [tickets, setTickets] = useState<Ticket[]>(initialTickets);
   const toast = useToastHelpers();
+  
+  // API calls
+  const { data: tickets = [], refetch: refetchTickets } = api.tickets.getAll.useQuery({});
+  const createTicketMutation = api.tickets.create.useMutation({
+    onSuccess: () => {
+      refetchTickets();
+    }
+  });
 
-  const handleNewTicket = (newTicketData: Omit<Ticket, "id" | "number" | "status" | "created" | "updated" | "timeSpent">) => {
-    const nextNumber = `HLX-${String(tickets.length + 1).padStart(3, '0')}`;
-    const newTicket: Ticket = {
-      ...newTicketData,
-      id: `t${tickets.length + 1}`,
-      number: nextNumber,
-      status: "open",
-      created: "Just now",
-      updated: "Just now",
-      timeSpent: 0,
-    };
-    
-    setTickets((prev) => [newTicket, ...prev]);
-    
-    // Show success toast
-    toast.success(
-      "Ticket Created",
-      `${nextNumber} - ${newTicketData.title}`
-    );
+  const handleNewTicket = async (newTicketData: any) => {
+    try {
+      const result = await createTicketMutation.mutateAsync({
+        title: newTicketData.title,
+        description: newTicketData.description || "",
+        priority: newTicketData.priority,
+        clientId: newTicketData.clientId,
+        assigneeId: newTicketData.assigneeId || undefined,
+        estimatedHours: newTicketData.estimatedHours || undefined,
+      });
+      
+      // Show success toast
+      toast.success(
+        "Ticket Created",
+        `${result.number} - ${newTicketData.title}`
+      );
+    } catch (error) {
+      toast.error("Error", "Failed to create ticket");
+    }
   };
 
   // Keyboard shortcuts

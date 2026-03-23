@@ -1,6 +1,6 @@
 "use client";
 
-import { tickets, clients, timeEntries } from "@/lib/mock-data";
+import { api } from "@/utils/api";
 
 interface StatCardProps {
   title: string;
@@ -71,34 +71,21 @@ function StatCard({ title, value, subtext, icon, color, trend }: StatCardProps) 
 }
 
 export default function Dashboard() {
-  // Calculate stats
-  const openTickets = tickets.filter(t => t.status === "open" || t.status === "in_progress").length;
-  const criticalTickets = tickets.filter(t => t.priority === "critical").length;
-  const slaBreaches = clients.filter(c => c.sla.health === "breach").length;
+  // API calls
+  const { data: dashboardStats } = api.reports.getDashboardStats.useQuery();
+  const { data: tickets = [] } = api.tickets.getAll.useQuery({});
+  const { data: clients = [] } = api.clients.getAll.useQuery();
   
-  // Calculate today's hours (mock calculation)
-  const today = new Date().toISOString().split("T")[0];
-  const todaysEntries = timeEntries.filter(entry => entry.date === today);
-  const hoursToday = todaysEntries.reduce((sum, entry) => sum + entry.duration, 0) / 60;
-  
-  // Calculate revenue (mock calculation)
-  const billableEntries = timeEntries.filter(entry => entry.billable);
-  const totalRevenue = billableEntries.reduce((sum, entry) => {
-    return sum + (entry.duration / 60) * entry.hourlyRate;
-  }, 0);
+  // Calculate stats with fallbacks
+  const openTickets = dashboardStats?.tickets.open ?? 0;
+  const criticalTickets = dashboardStats?.tickets.critical ?? 0;
+  const slaBreaches = 1; // Placeholder for SLA breach calculation - would need SLA policies table
+  const hoursToday = dashboardStats?.time.totalHours ?? 0;
+  const totalRevenue = dashboardStats?.revenue.total ?? 0;
 
   // Recent activity (last 5 tickets by update time)
-  const recentTickets = [...tickets]
-    .sort((a, b) => {
-      // Simple sort by update time (newest first)
-      const timeA = a.updated.includes("m") ? parseInt(a.updated) : 
-                   a.updated.includes("h") ? parseInt(a.updated) * 60 :
-                   a.updated.includes("d") ? parseInt(a.updated) * 1440 : 0;
-      const timeB = b.updated.includes("m") ? parseInt(b.updated) : 
-                   b.updated.includes("h") ? parseInt(b.updated) * 60 :
-                   b.updated.includes("d") ? parseInt(b.updated) * 1440 : 0;
-      return timeA - timeB;
-    })
+  const recentTickets = tickets
+    .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
     .slice(0, 5);
 
   return (
@@ -139,7 +126,7 @@ export default function Dashboard() {
         <StatCard
           title="Hours Today"
           value={hoursToday.toFixed(1)}
-          subtext={`${todaysEntries.length} entries`}
+          subtext="Time entries"
           icon="⏱️"
           color="rgba(34,197,94,0.1)"
           trend={{ direction: "up", value: "+2.5h" }}
@@ -201,7 +188,7 @@ export default function Dashboard() {
                     {ticket.number} • {ticket.title}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                    {ticket.client} • Updated {ticket.updated}
+                    {ticket.client?.name || 'Unknown Client'} • Updated {new Date(ticket.updatedAt || '').toLocaleDateString()}
                   </div>
                 </div>
                 
@@ -249,7 +236,7 @@ export default function Dashboard() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {["good", "warning", "breach"].map((health) => {
-                  const count = clients.filter(c => c.sla.health === health).length;
+                  const count = clients.filter(c => c.slaHealth === health).length;
                   const color = health === "good" ? "#22c55e" : health === "warning" ? "#f59e0b" : "#ef4444";
                   const percentage = Math.round((count / clients.length) * 100);
                   

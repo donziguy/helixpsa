@@ -41,7 +41,7 @@
 - [x] **4.2** SLA engine — configurable SLA policies per client/priority, breach alerts ✅
 - [x] **4.3** Asset management page — devices, software, per-client inventory ✅
 - [x] **4.4** Schedule/dispatch view — calendar with tech assignments ✅
-- [x] **4.5** Reports page — charts for ticket volume, resolution time, revenue
+- [x] **4.5** [x] Reports page — charts for ticket volume, resolution time, revenue
 
 ### Phase 5 — AI & Advanced (Sprint 5)
 - [x] **5.1** AI ticket triage — auto-categorize, suggest priority/assignee ✅
@@ -49,6 +49,7 @@
 - [x] **5.3** Knowledge base — searchable articles, link to tickets ✅
 - [x] **5.4** Email-to-ticket — IMAP integration, auto-create tickets from client emails ✅
 - [x] **5.5** Client portal — external view for clients to submit/track tickets ✅
+- [x] **6.1** Dashboard API integration — Replace mock data with real tRPC calls in dashboard components ✅
 
 ## Deploy Process
 1. Build: `cd app && npx next build`
@@ -59,7 +60,7 @@
 6. Restart: `docker rm -f helixpsa helixpsa-tunnel && docker run ... (see deploy script)`
 
 ## Current Status
-- **Last build:** v2.3 (5.5 complete — Client portal for external ticket submission and tracking with client authentication, ticket management, and public note system)
+- **Last build:** v2.4 (Dashboard tRPC Integration — Critical update connecting dashboard to real database via tRPC instead of mock data)
 - **Authentication:** Complete NextAuth.js integration with credentials provider, middleware protection, user sessions, logout functionality, and client portal authentication
 - **Database:** PostgreSQL with complete schema including reports/analytics queries, organization-scoped security, email configuration and processing log tables
 - **API:** Full tRPC implementation with protected procedures, input validation via Zod, AI router with intelligent ticket analysis and suggestions, email router for IMAP management, portal router for client access
@@ -69,4 +70,6 @@
 - **AI System:** Rule-based ticket categorization, priority analysis, assignee suggestions with workload balancing, time estimation from historical data, and dashboard insights
 - **Email Integration:** IMAP email monitoring with encrypted password storage, configurable client routing, intelligent ticket creation, processing logs with statistics, and comprehensive management interface
 - **Client Portal:** External portal at /portal with client authentication via email + client ID, ticket submission, tracking, status viewing, and public note system (internal notes hidden from clients)
-- **Next up:** All Phase 5 features complete! Ready for production deployment and user testing.
+- **Reports:** Comprehensive analytics with interactive charts for ticket volume, resolution time, revenue analysis, dashboard stats, chart filtering, and top clients sidebar
+- **Dashboard Integration:** Main dashboard and home page now use real tRPC API calls instead of mock data, connecting to PostgreSQL database with proper error handling and loading states
+- **Next up:** All phases complete! Dashboard now fully integrated with backend. Ready for production deployment and user testing.
