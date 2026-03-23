@@ -81,7 +81,7 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
   };
 
   return (
-    <div style={getToastStyles()}>
+    <div data-testid="toast-item" style={getToastStyles()}>
       {/* Progress bar for timed toasts */}
       {toast.duration !== 0 && (
         <div
@@ -130,6 +130,7 @@ function ToastItem({ toast, onDismiss }: ToastItemProps) {
         </div>
 
         <button
+          data-testid={`dismiss-${toast.id}`}
           onClick={() => {
             setIsLeaving(true);
             setTimeout(() => onDismiss(toast.id), 300);

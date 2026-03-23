@@ -20,6 +20,19 @@ vi.mock('mailparser', () => ({
   simpleParser: vi.fn(),
 }));
 
+vi.mock('crypto', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('crypto')>();
+  return {
+    ...actual,
+    createHash: vi.fn(() => ({
+      update: vi.fn().mockReturnThis(),
+      digest: vi.fn(() => 'mocked-hash'),
+    })),
+    createCipher: vi.fn(),
+    createDecipher: vi.fn(),
+  };
+});
+
 vi.mock('~/db', () => ({
   db: {
     select: vi.fn(),

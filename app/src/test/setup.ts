@@ -30,7 +30,7 @@ vi.mock('next/navigation', () => ({
 
 // Mock next-auth/react
 vi.mock('next-auth/react', () => ({
-  SessionProvider: ({ children }: { children: React.ReactNode }) => children,
+  SessionProvider: vi.fn(({ children }) => children),
   useSession: () => ({
     data: {
       user: { id: '1', email: 'test@example.com', name: 'Test User' },
@@ -46,6 +46,9 @@ vi.mock('next-auth/react', () => ({
 vi.mock('@/lib/toast-context', () => ({
   ToastProvider: ({ children }: { children: React.ReactNode }) => children,
   useToast: () => ({
+    toasts: [],
+    showToast: vi.fn(),
+    removeToast: vi.fn(),
     toast: vi.fn(),
   }),
   useToastHelpers: () => ({
@@ -64,7 +67,7 @@ vi.mock('@/lib/toast-context', () => ({
 
 // Mock Redis
 vi.mock('ioredis', () => {
-  const Redis = vi.fn().mockImplementation(() => ({
+  const mockRedis = {
     get: vi.fn().mockResolvedValue(null),
     set: vi.fn().mockResolvedValue('OK'),
     setex: vi.fn().mockResolvedValue('OK'),
@@ -76,19 +79,27 @@ vi.mock('ioredis', () => {
     on: vi.fn(),
     off: vi.fn(),
     disconnect: vi.fn(),
-  }));
+  };
+  
+  const Redis = vi.fn().mockImplementation(() => mockRedis);
   return { default: Redis };
 });
 
 // Mock socket.io-client
-vi.mock('socket.io-client', () => ({
-  io: vi.fn(() => ({
+vi.mock('socket.io-client', () => {
+  const mockSocket = {
     emit: vi.fn(),
     on: vi.fn(),
     off: vi.fn(),
     disconnect: vi.fn(),
-  })),
-}));
+  };
+  
+  const io = vi.fn(() => mockSocket);
+  return { 
+    io,
+    __mockSocket: mockSocket,
+  };
+});
 
 // Mock crypto
 vi.mock('crypto', async (importOriginal) => {
@@ -123,6 +134,40 @@ vi.mock('next/server', () => ({
 
 // Mock tRPC API
 vi.mock('@/utils/api', () => {
+  const mockTickets = [
+    {
+      id: '1',
+      number: '#T-001',
+      title: 'Test Ticket 1',
+      description: 'Test description',
+      priority: 'high',
+      status: 'open',
+      clientId: '1',
+      assigneeId: '1',
+      createdAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-01'),
+      client: { id: '1', name: 'Acme Corp' },
+      assignee: { id: '1', name: 'John Doe' },
+    },
+  ];
+
+  const mockClients = [
+    { id: '1', name: 'Acme Corp', email: 'contact@acme.com' },
+    { id: '2', name: 'Globex Industries', email: 'info@globex.com' },
+  ];
+
+  const mockUsers = [
+    { id: '1', name: 'John Doe', email: 'john@example.com' },
+    { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
+  ];
+
+  const mockStats = {
+    openTickets: 5,
+    slaBreaches: 2,
+    hoursToday: 6.5,
+    revenue: 12500.00,
+  };
+
   const mockQueryResult = {
     data: [],
     isLoading: false,
@@ -142,14 +187,14 @@ vi.mock('@/utils/api', () => {
   return {
     api: {
       tickets: {
-        getAll: { useQuery: vi.fn(() => mockQueryResult) },
+        getAll: { useQuery: vi.fn(() => ({ ...mockQueryResult, data: mockTickets })) },
         create: { useMutation: vi.fn(() => mockMutationResult) },
         update: { useMutation: vi.fn(() => mockMutationResult) },
         delete: { useMutation: vi.fn(() => mockMutationResult) },
         updateStatus: { useMutation: vi.fn(() => mockMutationResult) },
       },
       clients: {
-        getAll: { useQuery: vi.fn(() => mockQueryResult) },
+        getAll: { useQuery: vi.fn(() => ({ ...mockQueryResult, data: mockClients })) },
         create: { useMutation: vi.fn(() => mockMutationResult) },
         update: { useMutation: vi.fn(() => mockMutationResult) },
         delete: { useMutation: vi.fn(() => mockMutationResult) },
@@ -161,7 +206,7 @@ vi.mock('@/utils/api', () => {
         delete: { useMutation: vi.fn(() => mockMutationResult) },
       },
       users: {
-        getAll: { useQuery: vi.fn(() => mockQueryResult) },
+        getAll: { useQuery: vi.fn(() => ({ ...mockQueryResult, data: mockUsers })) },
         create: { useMutation: vi.fn(() => mockMutationResult) },
         update: { useMutation: vi.fn(() => mockMutationResult) },
         delete: { useMutation: vi.fn(() => mockMutationResult) },
@@ -195,7 +240,7 @@ vi.mock('@/utils/api', () => {
         deleteEvent: { useMutation: vi.fn(() => mockMutationResult) },
       },
       reports: {
-        getDashboardStats: { useQuery: vi.fn(() => mockQueryResult) },
+        getDashboardStats: { useQuery: vi.fn(() => ({ ...mockQueryResult, data: mockStats })) },
         getTicketVolume: { useQuery: vi.fn(() => mockQueryResult) },
         getResolutionTime: { useQuery: vi.fn(() => mockQueryResult) },
         getRevenue: { useQuery: vi.fn(() => mockQueryResult) },
@@ -209,6 +254,7 @@ vi.mock('@/utils/api', () => {
         testConfiguration: { useMutation: vi.fn(() => mockMutationResult) },
         processEmails: { useMutation: vi.fn(() => mockMutationResult) },
         getProcessingLogs: { useQuery: vi.fn(() => mockQueryResult) },
+        getStatistics: { useQuery: vi.fn(() => mockQueryResult) },
       },
       knowledge: {
         getAll: { useQuery: vi.fn(() => mockQueryResult) },

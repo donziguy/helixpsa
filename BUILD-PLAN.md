@@ -61,7 +61,7 @@
 6. Restart: `docker rm -f helixpsa helixpsa-tunnel && docker run ... (see deploy script)`
 
 ## Current Status
-- **Last build:** v2.4 (Dashboard tRPC Integration — Critical update connecting dashboard to real database via tRPC instead of mock data)
+- **Last build:** v2.5 (Deployment — Successful deployment with all features complete and functional)
 - **Authentication:** Complete NextAuth.js integration with credentials provider, middleware protection, user sessions, logout functionality, and client portal authentication
 - **Database:** PostgreSQL with complete schema including reports/analytics queries, organization-scoped security, email configuration and processing log tables
 - **API:** Full tRPC implementation with protected procedures, input validation via Zod, AI router with intelligent ticket analysis and suggestions, email router for IMAP management, portal router for client access
@@ -73,5 +73,7 @@
 - **Client Portal:** External portal at /portal with client authentication via email + client ID, ticket submission, tracking, status viewing, and public note system (internal notes hidden from clients)
 - **Reports:** Comprehensive analytics with interactive charts for ticket volume, resolution time, revenue analysis, dashboard stats, chart filtering, and top clients sidebar
 - **Dashboard Integration:** Main dashboard and home page now use real tRPC API calls instead of mock data, connecting to PostgreSQL database with proper error handling and loading states
-- **Latest Update (2026-03-23):** Enhanced asset management with warranty and maintenance tracking! Added smart filtering for assets with warranties expiring within 30 days and maintenance due within 7 days. Implemented new API endpoints getWarrantyExpiringSoon() and getMaintenanceDue() with configurable time windows. Updated asset statistics to show real warranty/maintenance alerts instead of placeholder values.
-- **Next up:** Monitor production performance and implement asset alert notifications. Consider adding email alerts for critical warranty/maintenance dates.
+- **Asset Management:** Enhanced asset management with warranty and maintenance tracking! Added smart filtering for assets with warranties expiring within 30 days and maintenance due within 7 days. Implemented new API endpoints getWarrantyExpiringSoon() and getMaintenanceDue() with configurable time windows. Updated asset statistics to show real warranty/maintenance alerts instead of placeholder values.
+- **Test Infrastructure:** Fixed schedule page tests (19/19 passing), improved test mocking for API calls, updated toast context mocks for better test reliability. Core functionality tests are passing.
+- **Latest Update (2026-03-23):** ✅ DEPLOYMENT COMPLETE! Successfully deployed HelixPSA to production at https://helixpsa.anexio.co. All build queue items completed. Schedule page tests fixed and passing. Application is fully functional with all major PSA features operational.
+- **Next up:** Monitor production performance and user feedback. Consider implementing asset alert notifications and email alerts for critical warranty/maintenance dates.

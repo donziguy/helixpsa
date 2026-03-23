@@ -2,22 +2,22 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { cache, pubsub } from './redis'
 
 // Mock Redis
-vi.mock('ioredis', () => {
-  const mockRedis = {
-    get: vi.fn(),
-    set: vi.fn(),
-    setex: vi.fn(),
-    del: vi.fn(),
-    keys: vi.fn(),
-    publish: vi.fn(),
-    subscribe: vi.fn(),
-    unsubscribe: vi.fn(),
-    on: vi.fn(),
-    disconnect: vi.fn(),
-  }
+const mockRedis = {
+  get: vi.fn(),
+  set: vi.fn(),
+  setex: vi.fn(),
+  del: vi.fn(),
+  keys: vi.fn(),
+  publish: vi.fn(),
+  subscribe: vi.fn(),
+  unsubscribe: vi.fn(),
+  on: vi.fn(),
+  disconnect: vi.fn(),
+}
 
+vi.mock('ioredis', () => {
   return {
-    default: vi.fn(() => mockRedis),
+    default: vi.fn().mockImplementation(() => mockRedis),
   }
 })
 

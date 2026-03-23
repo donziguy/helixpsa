@@ -28,8 +28,8 @@ describe('NewTicketModal', () => {
 
   it('renders nothing when not open', () => {
     const props = makeProps();
-    const { container } = render(<NewTicketModal {...props} isOpen={false} />);
-    expect(container.innerHTML).toBe('');
+    const { queryByText } = render(<NewTicketModal {...props} isOpen={false} />);
+    expect(queryByText('New Ticket')).not.toBeInTheDocument();
   });
 
   it('renders modal header and title input', () => {

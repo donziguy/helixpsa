@@ -2,8 +2,6 @@ import { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink } from '@trpc/client';
-import { ToastProvider } from '@/lib/toast-context';
-import { SessionProvider } from 'next-auth/react';
 import { api } from '@/utils/api';
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '@/server/api/root';
@@ -31,12 +29,13 @@ function AllProviders({ children }: { children: React.ReactNode }) {
   const queryClient = createTestQueryClient();
   const trpcClient = createTestTRPCClient();
 
+  // Use simple div wrapper instead of complex providers for tests
   return (
     <api.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <SessionProvider>
-          <ToastProvider>{children}</ToastProvider>
-        </SessionProvider>
+        <div data-testid="test-wrapper">
+          {children}
+        </div>
       </QueryClientProvider>
     </api.Provider>
   );
