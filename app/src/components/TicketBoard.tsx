@@ -222,6 +222,7 @@ export default function TicketBoard({ tickets, onTicketClick, onStatusChange, on
         ticketCount={filteredTickets.length} 
         totalTicketCount={tickets.length}
         clientCount={new Set(filteredTickets.map(t => t.client)).size}
+        onNewTicket={onNewTicket}
       />
       
       <FiltersAndSearch
@@ -333,9 +334,10 @@ export default function TicketBoard({ tickets, onTicketClick, onStatusChange, on
   );
 }
 
-function BoardHeader({ view, setView, ticketCount, totalTicketCount, clientCount }: {
+function BoardHeader({ view, setView, ticketCount, totalTicketCount, clientCount, onNewTicket }: {
   view: string; setView: (v: "board" | "list") => void;
   ticketCount: number; totalTicketCount: number; clientCount: number;
+  onNewTicket?: () => void;
 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
