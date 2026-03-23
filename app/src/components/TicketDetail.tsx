@@ -16,9 +16,12 @@ interface TicketDetailProps {
 
 export default function TicketDetail({ ticket, onClose, onStatusChange, onTicketUpdate, timer, onTimerToggle }: TicketDetailProps) {
   const [note, setNote] = useState("");
-  const [notes, setNotes] = useState<{ text: string; time: string; author: string }[]>([
-    { text: "Checked event logs, found authentication errors starting at 8:47 AM.", time: "10:15 AM", author: "Mike T." },
-    { text: "Restarted transport service, monitoring sync status.", time: "10:45 AM", author: "Mike T." },
+  const [noteTime, setNoteTime] = useState("");
+  const [noteBillable, setNoteBillable] = useState(true);
+  const [noteInternal, setNoteInternal] = useState(false);
+  const [notes, setNotes] = useState<{ text: string; time: string; author: string; duration?: string; billable?: boolean; internal?: boolean }[]>([
+    { text: "Checked event logs, found authentication errors starting at 8:47 AM.", time: "10:15 AM", author: "Mike T.", duration: "0:30", billable: true },
+    { text: "Restarted transport service, monitoring sync status.", time: "10:45 AM", author: "Mike T.", duration: "0:15", billable: true },
   ]);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -44,8 +47,16 @@ export default function TicketDetail({ ticket, onClose, onStatusChange, onTicket
 
   const addNote = () => {
     if (!note.trim()) return;
-    setNotes([...notes, { text: note, time: "Just now", author: "Cory S." }]);
+    setNotes([...notes, { 
+      text: note, 
+      time: "Just now", 
+      author: "Cory S.", 
+      duration: noteTime || undefined,
+      billable: noteBillable,
+      internal: noteInternal,
+    }]);
     setNote("");
+    setNoteTime("");
   };
 
   return (
@@ -238,32 +249,92 @@ export default function TicketDetail({ ticket, onClose, onStatusChange, onTicket
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{n.time}</span>
                   </div>
                   <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>{n.text}</div>
+                  {(n.duration || n.internal) && (
+                    <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                      {n.duration && (
+                        <span style={{
+                          fontSize: 11, padding: "2px 6px", borderRadius: 4,
+                          background: n.billable ? "rgba(34, 197, 94, 0.15)" : "rgba(156, 163, 175, 0.15)",
+                          color: n.billable ? "#22c55e" : "var(--text-muted)",
+                        }}>
+                          ⏱ {n.duration} {n.billable ? "(billable)" : "(non-billable)"}
+                        </span>
+                      )}
+                      {n.internal && (
+                        <span style={{
+                          fontSize: 11, padding: "2px 6px", borderRadius: 4,
+                          background: "rgba(239, 68, 68, 0.15)", color: "#ef4444",
+                        }}>
+                          🔒 Internal
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
 
-            {/* Add note */}
-            <div style={{ display: "flex", gap: 8 }}>
-              <input
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") addNote(); }}
-                placeholder="Add a note... (Enter to send)"
-                style={{
-                  flex: 1, padding: "10px 12px", borderRadius: 6,
-                  background: "var(--bg-tertiary)", border: "1px solid var(--border-subtle)",
-                  color: "var(--text)", fontSize: 13, fontFamily: "inherit",
-                  outline: "none",
-                }}
-              />
-              <button
-                onClick={addNote}
-                style={{
-                  padding: "10px 16px", borderRadius: 6,
-                  background: "var(--accent)", color: "white",
-                  border: "none", cursor: "pointer", fontSize: 13, fontFamily: "inherit",
-                }}
-              >Send</button>
+            {/* Add note with time entry */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) addNote(); }}
+                  placeholder="Add a note... (Enter to send)"
+                  style={{
+                    flex: 1, padding: "10px 12px", borderRadius: 6,
+                    background: "var(--bg-tertiary)", border: "1px solid var(--border-subtle)",
+                    color: "var(--text)", fontSize: 13, fontFamily: "inherit",
+                    outline: "none",
+                  }}
+                />
+                <input
+                  value={noteTime}
+                  onChange={(e) => setNoteTime(e.target.value)}
+                  placeholder="Time (e.g. 0:15)"
+                  style={{
+                    width: 100, padding: "10px 12px", borderRadius: 6,
+                    background: "var(--bg-tertiary)", border: "1px solid var(--border-subtle)",
+                    color: "var(--text)", fontSize: 13, fontFamily: "inherit",
+                    outline: "none", textAlign: "center",
+                  }}
+                />
+                <button
+                  onClick={addNote}
+                  style={{
+                    padding: "10px 16px", borderRadius: 6,
+                    background: "var(--accent)", color: "white",
+                    border: "none", cursor: "pointer", fontSize: 13, fontFamily: "inherit",
+                  }}
+                >Send</button>
+              </div>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>
+                  <input type="checkbox" checked={noteBillable} onChange={(e) => setNoteBillable(e.target.checked)} style={{ accentColor: "var(--accent)" }} />
+                  Billable
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "var(--text-muted)", cursor: "pointer" }}>
+                  <input type="checkbox" checked={noteInternal} onChange={(e) => setNoteInternal(e.target.checked)} style={{ accentColor: "var(--accent)" }} />
+                  Internal note
+                </label>
+                {isTimerActive && timerSeconds > 0 && (
+                  <button
+                    onClick={() => {
+                      const h = Math.floor(timerSeconds / 3600);
+                      const m = Math.floor((timerSeconds % 3600) / 60);
+                      setNoteTime(`${h}:${String(m).padStart(2, "0")}`);
+                    }}
+                    style={{
+                      fontSize: 11, padding: "2px 8px", borderRadius: 4,
+                      background: "rgba(59, 130, 246, 0.15)", color: "#3b82f6",
+                      border: "none", cursor: "pointer", fontFamily: "inherit",
+                    }}
+                  >
+                    Use timer ({formatTime(timerSeconds)})
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
