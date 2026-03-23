@@ -13,10 +13,10 @@ export async function seedDatabase() {
   console.log('🌱 Seeding database...');
 
   try {
-    // First, set up RLS policies
-    console.log('Setting up Row Level Security...');
-    const rlsSQL = readFileSync(join(__dirname, 'setup-rls.sql'), 'utf-8');
-    await executeSQL(rlsSQL);
+    // Skip RLS setup for now (requires current_organization_id() function)
+    // console.log('Setting up Row Level Security...');
+    // const rlsSQL = readFileSync(join(__dirname, 'setup-rls.sql'), 'utf-8');
+    // await executeSQL(rlsSQL);
 
     // Create test organizations
     console.log('Creating organizations...');
