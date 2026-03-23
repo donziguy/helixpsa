@@ -10,14 +10,10 @@ TUNNEL_TOKEN="eyJhIjoiNGVhNzQ5MGIxNjkxZjQwOWM0N2ZmMzVhMDAzMWIxN2QiLCJ0IjoiODI5Yj
 echo "🧬 HelixPSA Deploy"
 echo "=================="
 
-# 1. Test (allow failures for scheduled build)
+# 1. Test
 echo "🧪 Running tests..."
 cd "$APP_DIR"
-if npx vitest run; then
-  echo "✅ Tests passed!"
-else
-  echo "⚠️  Some tests failed, but proceeding with deployment (scheduled build)"
-fi
+npx vitest run || { echo "❌ Tests failed! Aborting deploy."; exit 1; }
 
 # 2. Build
 echo "📦 Building..."
