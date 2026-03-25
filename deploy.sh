@@ -38,7 +38,7 @@ sshpass -p 'Banditboy51##' ssh -o StrictHostKeyChecking=no "$REMOTE" "
   cd $REMOTE_DIR && tar xzf $REMOTE_DIR.tar.gz
   docker build -t helixpsa:latest . 2>&1 | tail -5
   docker rm -f helixpsa helixpsa-tunnel 2>/dev/null
-  docker run -d --name helixpsa --restart unless-stopped -e HOSTNAME=0.0.0.0 -p 3002:3000 helixpsa:latest
+  docker run -d --name helixpsa --restart unless-stopped --network alga-psa_app-network -e HOSTNAME=0.0.0.0 -p 3002:3000 helixpsa:latest
   sleep 2
   docker run -d --name helixpsa-tunnel --restart unless-stopped \
     -e TUNNEL_TOKEN=$TUNNEL_TOKEN \
