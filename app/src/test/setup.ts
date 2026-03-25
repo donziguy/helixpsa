@@ -42,47 +42,64 @@ vi.mock('next-auth/react', () => ({
   signIn: vi.fn(),
 }));
 
-// Mock toast context
-vi.mock('@/lib/toast-context', () => ({
-  ToastProvider: ({ children }: { children: React.ReactNode }) => children,
-  useToast: () => ({
-    toasts: [],
-    showToast: vi.fn(),
-    removeToast: vi.fn(),
-    toast: vi.fn(),
-  }),
-  useToastHelpers: () => ({
-    success: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    warning: vi.fn(),
-    toast: {
+// Mock toast context for all tests except toast-context.test.tsx
+// That test file uses vi.unmock() to get the real implementation
+vi.mock('@/lib/toast-context', () => {
+  let mockToasts: any[] = [];
+  
+  const mockShowToast = vi.fn((type, title, description, duration) => {
+    const newToast = {
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type: type || 'info',
+      title: title || 'Test Toast',
+      description: description,
+      duration: duration || 5000,
+    };
+    mockToasts.push(newToast);
+  });
+
+  const mockDismissToast = vi.fn((id) => {
+    mockToasts = mockToasts.filter(t => t.id !== id);
+  });
+
+  return {
+    ToastProvider: ({ children }: { children: React.ReactNode }) => children,
+    useToast: () => ({
+      toasts: mockToasts,
+      showToast: mockShowToast,
+      dismissToast: mockDismissToast,
+    }),
+    useToastHelpers: () => ({
       success: vi.fn(),
       error: vi.fn(),
       info: vi.fn(),
       warning: vi.fn(),
-    },
-  }),
-}));
+    }),
+  };
+});
 
 // Mock Redis
 vi.mock('ioredis', () => {
-  const mockRedis = {
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue('OK'),
-    setex: vi.fn().mockResolvedValue('OK'),
-    del: vi.fn().mockResolvedValue(1),
-    keys: vi.fn().mockResolvedValue([]),
-    publish: vi.fn().mockResolvedValue(1),
-    subscribe: vi.fn(),
-    unsubscribe: vi.fn(),
-    on: vi.fn(),
-    off: vi.fn(),
-    disconnect: vi.fn(),
-  };
+  // Create a class-like constructor function for new Redis()
+  function MockRedis(url?: string, options?: any) {
+    return {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue('OK'),
+      setex: vi.fn().mockResolvedValue('OK'),
+      del: vi.fn().mockResolvedValue(1),
+      keys: vi.fn().mockResolvedValue([]),
+      publish: vi.fn().mockResolvedValue(1),
+      subscribe: vi.fn().mockResolvedValue(1),
+      unsubscribe: vi.fn().mockResolvedValue(1),
+      on: vi.fn(),
+      off: vi.fn(),
+      disconnect: vi.fn(),
+    };
+  }
   
-  const Redis = vi.fn().mockImplementation(() => mockRedis);
-  return { default: Redis };
+  return { 
+    default: MockRedis,
+  };
 });
 
 // Mock socket.io-client
@@ -92,11 +109,18 @@ vi.mock('socket.io-client', () => {
     on: vi.fn(),
     off: vi.fn(),
     disconnect: vi.fn(),
+    connected: true,
   };
   
   const io = vi.fn(() => mockSocket);
+  // Make io a spy so it can be tested
+  Object.assign(io, {
+    mockReturnValue: vi.fn(() => io),
+    mockImplementation: vi.fn(() => io),
+  });
+  
   return { 
-    io,
+    io: vi.fn(() => mockSocket),
     __mockSocket: mockSocket,
   };
 });
@@ -284,7 +308,8 @@ vi.mock('@/utils/api', () => {
   };
 });
 
-// Additional specific mocks for problematic paths
+// Additional path-specific mocks for different relative import patterns
 vi.mock('../../../utils/api', () => vi.importActual('@/utils/api'));
 vi.mock('../../utils/api', () => vi.importActual('@/utils/api'));
 vi.mock('../utils/api', () => vi.importActual('@/utils/api'));
+vi.mock('./utils/api', () => vi.importActual('@/utils/api'));

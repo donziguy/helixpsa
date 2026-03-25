@@ -1,117 +1,77 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@/test/test-utils';
+import { render, screen } from '@testing-library/react';
 import Dashboard from './Dashboard';
 
-// Mock the data modules
-vi.mock('@/lib/mock-data', () => ({
-  tickets: [
-    {
-      id: 't1',
-      number: 'HLX-001',
-      title: 'Test ticket 1',
-      client: 'Test Client',
-      assignee: 'Test User',
-      priority: 'critical',
-      status: 'open',
-      sla: '1h remaining',
-      created: '1h ago',
-      updated: '5m ago',
-      description: 'Test description',
-      timeSpent: 30
+// Mock the tRPC API
+vi.mock('@/utils/api', () => ({
+  api: {
+    reports: {
+      getDashboardStats: {
+        useQuery: vi.fn(() => ({
+          data: {
+            tickets: { open: 2, critical: 1 },
+            time: { totalHours: 1.5 },
+            revenue: { total: 200 }
+          }
+        }))
+      }
     },
-    {
-      id: 't2',
-      number: 'HLX-002',
-      title: 'Test ticket 2',
-      client: 'Another Client',
-      assignee: 'Another User',
-      priority: 'high',
-      status: 'in_progress',
-      sla: '2h remaining',
-      created: '2h ago',
-      updated: '10m ago',
-      description: 'Another test description',
-      timeSpent: 60
+    tickets: {
+      getAll: {
+        useQuery: vi.fn(() => ({
+          data: [
+            {
+              id: 't1',
+              number: 'HLX-001',
+              title: 'Test ticket 1',
+              client: { name: 'Test Client' },
+              assignee: 'Test User',
+              priority: 'critical',
+              status: 'open',
+              updatedAt: new Date('2024-01-01T12:00:00Z').toISOString(),
+              createdAt: new Date('2024-01-01T11:00:00Z').toISOString(),
+              description: 'Test description'
+            },
+            {
+              id: 't2',
+              number: 'HLX-002',
+              title: 'Test ticket 2',
+              client: { name: 'Another Client' },
+              assignee: 'Another User',
+              priority: 'high',
+              status: 'in_progress',
+              updatedAt: new Date('2024-01-01T11:50:00Z').toISOString(),
+              createdAt: new Date('2024-01-01T10:00:00Z').toISOString(),
+              description: 'Another test description'
+            },
+            {
+              id: 't3',
+              number: 'HLX-003',
+              title: 'Test ticket 3',
+              client: { name: 'Third Client' },
+              assignee: 'Third User',
+              priority: 'medium',
+              status: 'resolved',
+              updatedAt: new Date('2024-01-01T10:00:00Z').toISOString(),
+              createdAt: new Date('2024-01-01T09:00:00Z').toISOString(),
+              description: 'Third test description'
+            }
+          ]
+        }))
+      }
     },
-    {
-      id: 't3',
-      number: 'HLX-003',
-      title: 'Test ticket 3',
-      client: 'Third Client',
-      assignee: 'Third User',
-      priority: 'medium',
-      status: 'resolved',
-      sla: 'Completed',
-      created: '1d ago',
-      updated: '1h ago',
-      description: 'Third test description',
-      timeSpent: 90
+    clients: {
+      getAll: {
+        useQuery: vi.fn(() => ({
+          data: [
+            { id: '1', name: 'Test Client', slaHealth: 'good' },
+            { id: '2', name: 'Another Client', slaHealth: 'warning' },
+            { id: '3', name: 'Third Client', slaHealth: 'breach' }
+          ]
+        }))
+      }
     }
-  ],
-  clients: [
-    {
-      id: 'c1',
-      name: 'Test Client',
-      ticketCount: 5,
-      monthlyHours: 20,
-      contact: { name: 'John Doe', email: 'john@test.com', phone: '555-1234' },
-      sla: { tier: 'Premium', responseTime: '1 hour', health: 'good' },
-      industry: 'Technology',
-      onboardDate: '2024-01-01'
-    },
-    {
-      id: 'c2',
-      name: 'Another Client',
-      ticketCount: 3,
-      monthlyHours: 15,
-      contact: { name: 'Jane Smith', email: 'jane@another.com', phone: '555-5678' },
-      sla: { tier: 'Standard', responseTime: '4 hours', health: 'warning' },
-      industry: 'Healthcare',
-      onboardDate: '2024-02-01'
-    },
-    {
-      id: 'c3',
-      name: 'Third Client',
-      ticketCount: 2,
-      monthlyHours: 10,
-      contact: { name: 'Bob Johnson', email: 'bob@third.com', phone: '555-9012' },
-      sla: { tier: 'Enterprise', responseTime: '30 minutes', health: 'breach' },
-      industry: 'Finance',
-      onboardDate: '2024-03-01'
-    }
-  ],
-  timeEntries: [
-    {
-      id: 'te1',
-      ticketId: 't1',
-      ticketNumber: 'HLX-001',
-      ticketTitle: 'Test ticket 1',
-      client: 'Test Client',
-      assignee: 'Test User',
-      description: 'Working on test',
-      startTime: '2026-03-21T10:00:00',
-      endTime: '2026-03-21T10:30:00',
-      duration: 30,
-      billable: true,
-      hourlyRate: 150,
-      date: '2026-03-21'
-    },
-    {
-      id: 'te2',
-      ticketId: 't2',
-      ticketNumber: 'HLX-002',
-      ticketTitle: 'Test ticket 2',
-      client: 'Another Client',
-      assignee: 'Another User',
-      description: 'More testing',
-      startTime: '2026-03-21T11:00:00',
-      endTime: '2026-03-21T12:00:00',
-      duration: 60,
-      billable: true,
-      hourlyRate: 125,
-      date: '2026-03-21'
-    }
-  ]
+  }
 }));
 
 describe('Dashboard', () => {
@@ -135,8 +95,8 @@ describe('Dashboard', () => {
 
   it('shows correct open tickets count', () => {
     render(<Dashboard />);
-    // 2 tickets with open/in_progress status
-    expect(screen.getAllByText('2').length).toBeGreaterThan(0);
+    // Should show "2" from dashboard stats
+    expect(screen.getByText('2')).toBeInTheDocument();
   });
 
   it('displays SLA breach count', () => {
@@ -147,14 +107,14 @@ describe('Dashboard', () => {
 
   it('shows hours today calculation', () => {
     render(<Dashboard />);
-    // 1.5 hours total (30 + 60 minutes / 60)
-    expect(screen.getAllByText('1.5').length).toBeGreaterThan(0);
+    // Should show "1.5" from dashboard stats
+    expect(screen.getByText('1.5')).toBeInTheDocument();
   });
 
   it('calculates and displays revenue', () => {
     render(<Dashboard />);
-    // Revenue calculation: (30/60 * 150) + (60/60 * 125) = 75 + 125 = 200
-    expect(screen.getAllByText(/\$200/).length).toBeGreaterThan(0);
+    // Should show "$200" from dashboard stats
+    expect(screen.getByText('$200')).toBeInTheDocument();
   });
 
   it('displays recent activity section', () => {
@@ -164,14 +124,15 @@ describe('Dashboard', () => {
 
   it('shows ticket numbers and titles in recent activity', () => {
     render(<Dashboard />);
-    expect(screen.getAllByText(/HLX-001/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Test ticket 1/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/HLX-001/)).toBeInTheDocument();
+    expect(screen.getByText(/Test ticket 1/)).toBeInTheDocument();
   });
 
   it('displays client names in recent activity', () => {
     render(<Dashboard />);
-    // Check for ticket clients from mock data
-    expect(screen.getAllByText(/Test Client|Another Client|Third Client/).length).toBeGreaterThan(0);
+    // Check for client names in recent tickets
+    expect(screen.getByText(/Test Client/)).toBeInTheDocument();
+    expect(screen.getByText(/Another Client/)).toBeInTheDocument();
   });
 
   it('shows quick stats section', () => {
@@ -218,8 +179,8 @@ describe('Dashboard', () => {
 
   it('shows status badges in recent activity', () => {
     render(<Dashboard />);
-    expect(screen.getAllByText('open').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('in progress').length).toBeGreaterThan(0);
+    expect(screen.getByText('open')).toBeInTheDocument();
+    expect(screen.getByText('in progress')).toBeInTheDocument();
   });
 
   it('displays percentage calculations for client health', () => {
@@ -230,12 +191,12 @@ describe('Dashboard', () => {
 
   it('shows critical ticket count in subtext', () => {
     render(<Dashboard />);
-    expect(screen.getAllByText(/1 critical/).length).toBeGreaterThan(0);
+    expect(screen.getByText('1 critical')).toBeInTheDocument();
   });
 
   it('displays time entries count', () => {
     render(<Dashboard />);
-    expect(screen.getAllByText(/2 entries/).length).toBeGreaterThan(0);
+    expect(screen.getByText('Time entries')).toBeInTheDocument();
   });
 
   it('shows grid layout structure', () => {

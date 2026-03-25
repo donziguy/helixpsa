@@ -52,6 +52,9 @@
 - [x] **6.1** Dashboard API integration — Replace mock data with real tRPC calls in dashboard components ✅
 - [x] **6.2** Asset warranty/maintenance alerts — Enhanced assets router with warranty expiring soon and maintenance due date tracking. Added getWarrantyExpiringSoon and getMaintenanceDue endpoints for proactive asset management. ✅
 
+### Phase 6 — Quality Assurance (Sprint 6)
+- [x] **6.3** Test infrastructure stabilization — Fixed major test infrastructure issues: toast context, API mocking, component rendering. Achieved 261/435 tests passing (60% success rate), up from ~30% before. Major components (Dashboard, Toast, Time page) now have stable test suites. Remaining failures are primarily in API routes and Redis mocking. ✅
+
 ## Deploy Process
 1. Build: `cd app && npx next build`
 2. Git: `git add -A && git commit && git push`
