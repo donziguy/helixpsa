@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+export type ToastType = "success" | "error" | "info" | "warning";
+
 // Imperative toast API using custom events
 export function toast(message: string, type: ToastType = "success") {
   if (typeof window !== "undefined") {
@@ -10,8 +12,6 @@ export function toast(message: string, type: ToastType = "success") {
     );
   }
 }
-
-export type ToastType = "success" | "error" | "info" | "warning";
 
 export interface Toast {
   id: string;
