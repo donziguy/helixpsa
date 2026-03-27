@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Sidebar from "@/components/Sidebar";
+import MobileHeader from "@/components/MobileHeader";
 import TicketBoard from "@/components/TicketBoard";
 import CommandPalette from "@/components/CommandPalette";
 import TicketDetail from "@/components/TicketDetail";
 import NewTicketModal from "@/components/NewTicketModal";
 import { tickets as initialTickets, type Ticket, type Status } from "@/lib/mock-data";
 import { useToastHelpers } from "@/lib/toast-context";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 export default function TicketsPage() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -15,8 +17,10 @@ export default function TicketsPage() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>(initialTickets);
   const [timer, setTimer] = useState<{ ticketId: string; seconds: number; running: boolean } | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const toast = useToastHelpers();
+  const isMobile = useIsMobile();
 
   // Timer tick
   useEffect(() => {
@@ -142,17 +146,32 @@ export default function TicketsPage() {
   const activeTicket = timer?.running ? tickets.find(t => t.id === timer.ticketId) : null;
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-      <Sidebar />
+    <div style={{ 
+      display: "flex", 
+      height: "100vh", 
+      overflow: "hidden",
+      paddingTop: isMobile ? 56 : 0,
+    }}>
+      <MobileHeader 
+        onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+        title="Tickets"
+        mobileMenuOpen={mobileMenuOpen}
+      />
+      
+      <Sidebar 
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
+      />
 
       <main style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column" }}>
-        {/* Top bar */}
-        <header style={{
-          padding: "12px 24px",
-          borderBottom: "1px solid var(--border-subtle)",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          flexShrink: 0,
-        }}>
+        {/* Top bar - hidden on mobile */}
+        {!isMobile && (
+          <header style={{
+            padding: "12px 24px",
+            borderBottom: "1px solid var(--border-subtle)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            flexShrink: 0,
+          }}>
           <button
             onClick={() => setCommandPaletteOpen(true)}
             style={{
@@ -222,9 +241,10 @@ export default function TicketsPage() {
               }} />
             </button>
           </div>
-        </header>
+          </header>
+        )}
 
-        <div style={{ flex: 1, padding: 24, overflow: "auto" }}>
+        <div style={{ flex: 1, padding: isMobile ? 16 : 24, overflow: "auto" }}>
           <TicketBoard
             tickets={tickets}
             onTicketClick={handleTicketClick}

@@ -40,3 +40,42 @@ html, body {
 
 /* Selection */
 ::selection { background: var(--accent-muted); color: var(--accent-hover); }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  /* Ensure touch targets are at least 44px */
+  button, input, select, textarea, a {
+    min-height: 44px;
+  }
+  
+  /* Improve text readability on mobile */
+  body {
+    font-size: 16px; /* Prevent zoom on iOS */
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  /* Better spacing for mobile */
+  .mobile-padding {
+    padding: 16px;
+  }
+  
+  .mobile-margin {
+    margin: 16px;
+  }
+  
+  /* Mobile-first stack layout */
+  .desktop-flex {
+    display: block;
+  }
+  
+  .mobile-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  /* Hide elements on mobile */
+  .mobile-hidden {
+    display: none;
+  }
+}

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { priorityConfig, statusConfig, type Ticket, type Status, type Priority } from "@/lib/mock-data";
 import InlineEdit from "./InlineEdit";
 import { useKeyboardNavigation } from "@/hooks/useKeyboardNavigation";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 interface TicketBoardProps {
   tickets: Ticket[];
@@ -131,7 +132,8 @@ const columns: { status: Status; label: string }[] = [
 ];
 
 export default function TicketBoard({ tickets, onTicketClick, onStatusChange, onTicketUpdate, timer, onNewTicket }: TicketBoardProps) {
-  const [view, setView] = useState<"board" | "list">("board");
+  const isMobile = useIsMobile();
+  const [view, setView] = useState<"board" | "list">(isMobile ? "list" : "board");
   const [dragOverColumn, setDragOverColumn] = useState<Status | null>(null);
   const ticketRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
   
@@ -254,9 +256,11 @@ export default function TicketBoard({ tickets, onTicketClick, onStatusChange, on
       ) : (
         <div style={{
           display: "grid",
-          gridTemplateColumns: `repeat(${columns.length}, 1fr)`,
-          gap: 16, paddingBottom: 24,
+          gridTemplateColumns: isMobile ? "1fr" : `repeat(${columns.length}, 1fr)`,
+          gap: isMobile ? 12 : 16, 
+          paddingBottom: 24,
           minHeight: "calc(100vh - 160px)",
+          overflowX: isMobile ? "visible" : "auto",
         }}>
           {columns.map((col) => {
             const colTickets = filteredTickets.filter((t) => t.status === col.status);

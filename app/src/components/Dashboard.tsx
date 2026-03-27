@@ -1,6 +1,7 @@
 "use client";
 
 import { api } from "@/utils/api";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 interface StatCardProps {
   title: string;
@@ -71,6 +72,8 @@ function StatCard({ title, value, subtext, icon, color, trend }: StatCardProps) 
 }
 
 export default function Dashboard() {
+  const isMobile = useIsMobile();
+  
   // API calls
   const { data: dashboardStats } = api.reports.getDashboardStats.useQuery();
   const { data: tickets = [] } = api.tickets.getAll.useQuery({});
@@ -89,7 +92,7 @@ export default function Dashboard() {
     .slice(0, 5);
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: isMobile ? 16 : 24 }}>
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>
@@ -103,8 +106,10 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-        gap: 20,
+        gridTemplateColumns: isMobile 
+          ? "1fr" 
+          : "repeat(auto-fit, minmax(240px, 1fr))",
+        gap: isMobile ? 12 : 20,
         marginBottom: 32,
       }}>
         <StatCard
@@ -144,8 +149,8 @@ export default function Dashboard() {
       {/* Content Grid */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "2fr 1fr",
-        gap: 24,
+        gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr",
+        gap: isMobile ? 16 : 24,
       }}>
         {/* Recent Activity */}
         <div style={{

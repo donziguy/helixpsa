@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { clients, priorityConfig, type Priority, type Ticket } from "@/lib/mock-data";
 import TimeEstimationPanel from "./TimeEstimationPanel";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 interface NewTicketModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export default function NewTicketModal({ isOpen, onClose, onSubmit }: NewTicketM
   const [sla, setSla] = useState("24h remaining");
   const [estimatedHours, setEstimatedHours] = useState<number | undefined>();
   const titleRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (isOpen) {
@@ -71,26 +73,30 @@ export default function NewTicketModal({ isOpen, onClose, onSubmit }: NewTicketM
       style={{
         position: "fixed", inset: 0, zIndex: 1000,
         background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "20px",
+        display: "flex", 
+        alignItems: isMobile ? "flex-end" : "center", 
+        justifyContent: "center",
+        padding: isMobile ? 0 : "20px",
       }}
       onClick={onClose}
     >
       <div
         style={{
-          width: "100%", maxWidth: 600,
+          width: "100%", 
+          maxWidth: isMobile ? "none" : 600,
           background: "var(--bg-secondary)",
-          border: "1px solid var(--border)",
-          borderRadius: 12,
+          border: isMobile ? "none" : "1px solid var(--border)",
+          borderRadius: isMobile ? "12px 12px 0 0" : 12,
           boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
           overflow: "hidden",
+          maxHeight: isMobile ? "85vh" : "auto",
         }}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
         {/* Header */}
         <div style={{
-          padding: "20px 24px",
+          padding: isMobile ? "16px 20px" : "20px 24px",
           borderBottom: "1px solid var(--border-subtle)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
@@ -116,7 +122,11 @@ export default function NewTicketModal({ isOpen, onClose, onSubmit }: NewTicketM
         </div>
 
         {/* Form */}
-        <div style={{ padding: "24px" }}>
+        <div style={{ 
+          padding: isMobile ? "20px" : "24px",
+          maxHeight: isMobile ? "calc(85vh - 80px)" : "none",
+          overflowY: "auto",
+        }}>
           <div style={{ display: "grid", gap: 16 }}>
             {/* Title */}
             <div>
@@ -143,7 +153,11 @@ export default function NewTicketModal({ isOpen, onClose, onSubmit }: NewTicketM
             </div>
 
             {/* Client & Assignee Row */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", 
+              gap: 16 
+            }}>
               <div>
                 <label style={{
                   display: "block", fontSize: 13, fontWeight: 500,

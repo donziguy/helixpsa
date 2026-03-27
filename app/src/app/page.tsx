@@ -5,13 +5,17 @@ import Sidebar from "@/components/Sidebar";
 import Dashboard from "@/components/Dashboard";
 import CommandPalette from "@/components/CommandPalette";
 import NewTicketModal from "@/components/NewTicketModal";
+import MobileHeader from "@/components/MobileHeader";
 import { useToastHelpers } from "@/lib/toast-context";
 import { api } from "@/utils/api";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 
 export default function Home() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [newTicketModalOpen, setNewTicketModalOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const toast = useToastHelpers();
+  const isMobile = useIsMobile();
   
   // API calls
   const { data: tickets = [], refetch: refetchTickets } = api.tickets.getAll.useQuery({});
@@ -66,54 +70,76 @@ export default function Home() {
   }, [commandPaletteOpen, newTicketModalOpen]);
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-      <Sidebar />
+    <div style={{ 
+      display: "flex", 
+      height: "100vh", 
+      overflow: "hidden",
+      paddingTop: isMobile ? 56 : 0,
+    }}>
+      <MobileHeader 
+        onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+        title="Dashboard"
+        mobileMenuOpen={mobileMenuOpen}
+      />
+      
+      <Sidebar 
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
+      />
 
-      <main style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column" }}>
-        {/* Top bar */}
-        <header style={{
-          padding: "12px 24px",
-          borderBottom: "1px solid var(--border-subtle)",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          flexShrink: 0,
-        }}>
-          <button
-            onClick={() => setCommandPaletteOpen(true)}
-            style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "7px 14px", borderRadius: 8,
-              background: "var(--bg-tertiary)",
-              border: "1px solid var(--border-subtle)",
-              color: "var(--text-muted)", fontSize: 13,
-              cursor: "pointer", width: 280, fontFamily: "inherit",
-              transition: "border-color 100ms ease",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; }}
-          >
-            <span>🔍</span>
-            <span style={{ flex: 1, textAlign: "left" }}>Search or press /</span>
-            <kbd style={{
-              padding: "1px 6px", borderRadius: 4, fontSize: 11,
-              background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text-muted)",
-            }}>⌘K</kbd>
-          </button>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button style={{
-              position: "relative",
-              background: "none", border: "none", cursor: "pointer",
-              color: "var(--text-secondary)", fontSize: 18, padding: 4,
-            }}>
-              🔔
-              <span style={{
-                position: "absolute", top: 0, right: 0,
-                width: 8, height: 8, borderRadius: "50%",
-                background: "var(--danger)", border: "2px solid var(--bg)",
-              }} />
+      <main style={{ 
+        flex: 1, 
+        overflow: "auto", 
+        display: "flex", 
+        flexDirection: "column",
+        marginLeft: isMobile ? 0 : 0,
+      }}>
+        {/* Top bar - hidden on mobile as we have MobileHeader */}
+        {!isMobile && (
+          <header style={{
+            padding: "12px 24px",
+            borderBottom: "1px solid var(--border-subtle)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            flexShrink: 0,
+          }}>
+            <button
+              onClick={() => setCommandPaletteOpen(true)}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "7px 14px", borderRadius: 8,
+                background: "var(--bg-tertiary)",
+                border: "1px solid var(--border-subtle)",
+                color: "var(--text-muted)", fontSize: 13,
+                cursor: "pointer", width: 280, fontFamily: "inherit",
+                transition: "border-color 100ms ease",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border-subtle)"; }}
+            >
+              <span>🔍</span>
+              <span style={{ flex: 1, textAlign: "left" }}>Search or press /</span>
+              <kbd style={{
+                padding: "1px 6px", borderRadius: 4, fontSize: 11,
+                background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text-muted)",
+              }}>⌘K</kbd>
             </button>
-          </div>
-        </header>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <button style={{
+                position: "relative",
+                background: "none", border: "none", cursor: "pointer",
+                color: "var(--text-secondary)", fontSize: 18, padding: 4,
+              }}>
+                🔔
+                <span style={{
+                  position: "absolute", top: 0, right: 0,
+                  width: 8, height: 8, borderRadius: "50%",
+                  background: "var(--danger)", border: "2px solid var(--bg)",
+                }} />
+              </button>
+            </div>
+          </header>
+        )}
 
         <div style={{ flex: 1, overflow: "auto" }}>
           <Dashboard />
