@@ -14,6 +14,7 @@ import { emailRouter } from "./routers/email"
 import { portalRouter } from "./routers/portal"
 import { notificationsRouter } from "./routers/notifications"
 import { automationRouter } from "./routers/automation"
+import { slackRouter } from "./routers/slack"
 
 /**
  * This is the primary router for your server.
@@ -36,6 +37,7 @@ export const appRouter = createTRPCRouter({
   portal: portalRouter,
   notifications: notificationsRouter,
   automation: automationRouter,
+  slack: slackRouter,
 })
 
 // export type definition of API

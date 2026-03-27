@@ -14,7 +14,7 @@ export const articleStatusEnum = pgEnum('article_status', ['draft', 'published',
 export const articleTypeEnum = pgEnum('article_type', ['how_to', 'troubleshooting', 'faq', 'procedure', 'policy', 'reference']);
 export const notificationTypeEnum = pgEnum('notification_type', ['sla_breach', 'sla_warning', 'warranty_expiring', 'maintenance_due', 'ticket_assigned', 'ticket_overdue', 'system_alert']);
 export const notificationStatusEnum = pgEnum('notification_status', ['pending', 'sent', 'failed', 'bounced']);
-export const notificationChannelEnum = pgEnum('notification_channel', ['email', 'sms', 'webhook', 'internal']);
+export const notificationChannelEnum = pgEnum('notification_channel', ['email', 'sms', 'webhook', 'internal', 'slack']);
 export const automationRuleTypeEnum = pgEnum('automation_rule_type', ['auto_assign', 'auto_close', 'auto_escalate', 'auto_notify']);
 export const automationConditionTypeEnum = pgEnum('automation_condition_type', ['client_match', 'priority_match', 'status_match', 'time_elapsed', 'subject_contains', 'category_match']);
 
@@ -341,6 +341,41 @@ export const emailNotifications = pgTable('email_notifications', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// Slack workspace integrations table
+export const slackIntegrations = pgTable('slack_integrations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  teamId: varchar('team_id', { length: 255 }).notNull(), // Slack workspace ID
+  teamName: varchar('team_name', { length: 255 }).notNull(),
+  botUserId: varchar('bot_user_id', { length: 255 }).notNull(),
+  botAccessToken: text('bot_access_token').notNull(), // Encrypted
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Slack notifications table
+export const slackNotifications = pgTable('slack_notifications', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  recipientId: uuid('recipient_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  slackChannelId: varchar('slack_channel_id', { length: 255 }).notNull(), // Slack channel or DM ID
+  slackChannelName: varchar('slack_channel_name', { length: 255 }),
+  notificationType: notificationTypeEnum('notification_type').notNull(),
+  message: text('message').notNull(),
+  blocks: text('blocks'), // JSON for Slack blocks format
+  status: notificationStatusEnum('status').notNull().default('pending'),
+  errorMessage: text('error_message'),
+  sentAt: timestamp('sent_at'),
+  slackTimestamp: varchar('slack_timestamp', { length: 100 }), // Slack message timestamp for updates/threading
+  relatedTicketId: uuid('related_ticket_id').references(() => tickets.id, { onDelete: 'set null' }),
+  relatedAssetId: uuid('related_asset_id').references(() => assets.id, { onDelete: 'set null' }),
+  relatedSlaAlertId: uuid('related_sla_alert_id').references(() => slaAlerts.id, { onDelete: 'set null' }),
+  metadata: text('metadata'), // JSON object for additional notification-specific data
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Automation rules table
 export const automationRules = pgTable('automation_rules', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -390,6 +425,8 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   emailProcessingLogs: many(emailProcessingLogs),
   notificationPreferences: many(notificationPreferences),
   emailNotifications: many(emailNotifications),
+  slackIntegrations: many(slackIntegrations),
+  slackNotifications: many(slackNotifications),
   automationRules: many(automationRules),
   automationRuleExecutions: many(automationRuleExecutions),
 }));
@@ -662,6 +699,37 @@ export const emailNotificationsRelations = relations(emailNotifications, ({ one 
   }),
 }));
 
+export const slackIntegrationsRelations = relations(slackIntegrations, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [slackIntegrations.organizationId],
+    references: [organizations.id],
+  }),
+  slackNotifications: many(slackNotifications),
+}));
+
+export const slackNotificationsRelations = relations(slackNotifications, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [slackNotifications.organizationId],
+    references: [organizations.id],
+  }),
+  recipient: one(users, {
+    fields: [slackNotifications.recipientId],
+    references: [users.id],
+  }),
+  relatedTicket: one(tickets, {
+    fields: [slackNotifications.relatedTicketId],
+    references: [tickets.id],
+  }),
+  relatedAsset: one(assets, {
+    fields: [slackNotifications.relatedAssetId],
+    references: [assets.id],
+  }),
+  relatedSlaAlert: one(slaAlerts, {
+    fields: [slackNotifications.relatedSlaAlertId],
+    references: [slaAlerts.id],
+  }),
+}));
+
 export const automationRulesRelations = relations(automationRules, ({ one, many }) => ({
   organization: one(organizations, {
     fields: [automationRules.organizationId],
@@ -732,6 +800,10 @@ export type NotificationPreference = typeof notificationPreferences.$inferSelect
 export type NewNotificationPreference = typeof notificationPreferences.$inferInsert;
 export type EmailNotification = typeof emailNotifications.$inferSelect;
 export type NewEmailNotification = typeof emailNotifications.$inferInsert;
+export type SlackIntegration = typeof slackIntegrations.$inferSelect;
+export type NewSlackIntegration = typeof slackIntegrations.$inferInsert;
+export type SlackNotification = typeof slackNotifications.$inferSelect;
+export type NewSlackNotification = typeof slackNotifications.$inferInsert;
 export type AutomationRule = typeof automationRules.$inferSelect;
 export type NewAutomationRule = typeof automationRules.$inferInsert;
 export type AutomationRuleExecution = typeof automationRuleExecutions.$inferSelect;

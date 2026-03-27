@@ -9,6 +9,7 @@ import {
   clients, 
   users 
 } from '../db/schema';
+import { slackService } from './slack-service';
 import { eq, and, lte, sql, isNotNull } from 'drizzle-orm';
 
 export interface NotificationContext {
@@ -36,6 +37,31 @@ export class NotificationService {
         pass: process.env.SMTP_PASS,
       },
     });
+  }
+
+  /**
+   * Queue notifications to all enabled channels (email, Slack, etc.)
+   */
+  async queueNotification(context: NotificationContext): Promise<{ emailId?: string; slackId?: string }> {
+    const result: { emailId?: string; slackId?: string } = {};
+
+    // Queue email notification
+    try {
+      const emailId = await this.queueEmailNotification(context);
+      if (emailId) result.emailId = emailId;
+    } catch (error) {
+      console.error('Failed to queue email notification:', error);
+    }
+
+    // Queue Slack notification
+    try {
+      const slackId = await slackService.queueSlackNotification(context);
+      if (slackId) result.slackId = slackId;
+    } catch (error) {
+      console.error('Failed to queue Slack notification:', error);
+    }
+
+    return result;
   }
 
   /**
@@ -88,9 +114,10 @@ export class NotificationService {
   }
 
   /**
-   * Process pending email notifications
+   * Process pending email and Slack notifications
    */
   async processPendingNotifications(): Promise<{ sent: number; failed: number }> {
+    // Process email notifications
     const pendingNotifications = await db
       .select()
       .from(emailNotifications)
@@ -116,7 +143,7 @@ export class NotificationService {
 
         sent++;
       } catch (error) {
-        console.error(`Failed to send notification ${notification.id}:`, error);
+        console.error(`Failed to send email notification ${notification.id}:`, error);
         
         // Update status to failed with error message
         await db
@@ -130,6 +157,15 @@ export class NotificationService {
 
         failed++;
       }
+    }
+
+    // Process Slack notifications
+    try {
+      const slackResult = await slackService.processPendingNotifications();
+      sent += slackResult.sent;
+      failed += slackResult.failed;
+    } catch (error) {
+      console.error('Failed to process Slack notifications:', error);
     }
 
     return { sent, failed };
@@ -161,7 +197,7 @@ export class NotificationService {
 
     for (const alert of activeAlerts) {
       if (alert.assignee) {
-        await this.queueEmailNotification({
+        await this.queueNotification({
           organizationId: alert.ticket.organizationId,
           recipientId: alert.assignee.id,
           recipientEmail: alert.assignee.email,
@@ -230,7 +266,7 @@ export class NotificationService {
       for (const user of recipients) {
         // Only notify managers and admins about warranty expirations
         if (user.role === 'manager' || user.role === 'admin') {
-          await this.queueEmailNotification({
+          await this.queueNotification({
             organizationId: orgId,
             recipientId: user.id,
             recipientEmail: user.email,
@@ -298,7 +334,7 @@ export class NotificationService {
       
       for (const user of recipients) {
         if (user.role === 'manager' || user.role === 'admin' || user.role === 'technician') {
-          await this.queueEmailNotification({
+          await this.queueNotification({
             organizationId: orgId,
             recipientId: user.id,
             recipientEmail: user.email,
