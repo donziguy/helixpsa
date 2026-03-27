@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from "react";
 
+// Imperative toast API using custom events
+export function toast(message: string, type: ToastType = "success") {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("helix-toast", { detail: { message, type } })
+    );
+  }
+}
+
 export type ToastType = "success" | "error" | "info" | "warning";
 
 export interface Toast {

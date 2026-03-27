@@ -12,6 +12,8 @@ import { aiRouter } from "./routers/ai"
 import { knowledgeRouter } from "./routers/knowledge"
 import { emailRouter } from "./routers/email"
 import { portalRouter } from "./routers/portal"
+import { notificationsRouter } from "./routers/notifications"
+import { automationRouter } from "./routers/automation"
 
 /**
  * This is the primary router for your server.
@@ -32,6 +34,8 @@ export const appRouter = createTRPCRouter({
   knowledge: knowledgeRouter,
   email: emailRouter,
   portal: portalRouter,
+  notifications: notificationsRouter,
+  automation: automationRouter,
 })
 
 // export type definition of API

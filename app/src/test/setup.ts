@@ -156,6 +156,25 @@ vi.mock('next/server', () => ({
   },
 }));
 
+// Mock next-auth (ESM resolution fix)
+vi.mock('next-auth', () => {
+  const NextAuth = vi.fn(() => ({
+    handlers: { GET: vi.fn(), POST: vi.fn() },
+    auth: vi.fn(() => null),
+    signIn: vi.fn(),
+    signOut: vi.fn(),
+  }));
+  return { default: NextAuth };
+});
+
+// Mock @/lib/auth to avoid next-auth ESM import chain
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn(() => Promise.resolve(null)),
+  signIn: vi.fn(),
+  signOut: vi.fn(),
+  handlers: { GET: vi.fn(), POST: vi.fn() },
+}));
+
 // Mock tRPC API
 vi.mock('@/utils/api', () => {
   const mockTickets = [

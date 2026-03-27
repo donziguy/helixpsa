@@ -4,6 +4,7 @@ import { tickets, clients, users, timeEntries, slaPolicies, slaAlerts } from "@/
 import { and, eq, desc, asc, count, sum, isNotNull, sql } from "drizzle-orm"
 import { TRPCError } from "@trpc/server"
 import { events } from "@/lib/realtime"
+import { AutomationService } from "@/lib/automation/AutomationService"
 
 // Input validation schemas
 const createTicketSchema = z.object({
@@ -308,6 +309,19 @@ export const ticketsRouter = createTRPCRouter({
         data: newTicket
       }, ctx.organizationId)
 
+      // Execute automation rules for new ticket
+      try {
+        const automationService = new AutomationService(ctx.db)
+        await automationService.executeRulesForTicket(
+          newTicket.id,
+          ctx.organizationId,
+          'created'
+        )
+      } catch (error) {
+        // Log automation errors but don't fail ticket creation
+        console.warn('Automation rules failed for new ticket:', error)
+      }
+
       return newTicket
     }),
 
@@ -404,6 +418,19 @@ export const ticketsRouter = createTRPCRouter({
             organizationId: ctx.organizationId
           }
         }, ctx.organizationId)
+      }
+
+      // Execute automation rules for updated ticket
+      try {
+        const automationService = new AutomationService(ctx.db)
+        await automationService.executeRulesForTicket(
+          updatedTicket.id,
+          ctx.organizationId,
+          input.status && input.status !== existingTicket.status ? 'status_changed' : 'updated'
+        )
+      } catch (error) {
+        // Log automation errors but don't fail ticket update
+        console.warn('Automation rules failed for updated ticket:', error)
       }
 
       return updatedTicket

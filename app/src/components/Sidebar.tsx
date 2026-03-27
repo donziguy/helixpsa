@@ -16,6 +16,7 @@ const navItems = [
   { icon: "📈", label: "Reports", href: "/reports" },
   { icon: "📚", label: "Knowledge", href: "/knowledge" },
   { icon: "📧", label: "Email", href: "/email" },
+  { icon: "🔔", label: "Notifications", href: "/notifications" },
 ];
 
 const bottomItems = [

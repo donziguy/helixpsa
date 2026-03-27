@@ -12,6 +12,11 @@ export const assetTypeEnum = pgEnum('asset_type', ['hardware', 'software', 'netw
 export const assetStatusEnum = pgEnum('asset_status', ['active', 'inactive', 'maintenance', 'retired', 'lost_stolen']);
 export const articleStatusEnum = pgEnum('article_status', ['draft', 'published', 'archived']);
 export const articleTypeEnum = pgEnum('article_type', ['how_to', 'troubleshooting', 'faq', 'procedure', 'policy', 'reference']);
+export const notificationTypeEnum = pgEnum('notification_type', ['sla_breach', 'sla_warning', 'warranty_expiring', 'maintenance_due', 'ticket_assigned', 'ticket_overdue', 'system_alert']);
+export const notificationStatusEnum = pgEnum('notification_status', ['pending', 'sent', 'failed', 'bounced']);
+export const notificationChannelEnum = pgEnum('notification_channel', ['email', 'sms', 'webhook', 'internal']);
+export const automationRuleTypeEnum = pgEnum('automation_rule_type', ['auto_assign', 'auto_close', 'auto_escalate', 'auto_notify']);
+export const automationConditionTypeEnum = pgEnum('automation_condition_type', ['client_match', 'priority_match', 'status_match', 'time_elapsed', 'subject_contains', 'category_match']);
 
 // Organizations table (multi-tenancy)
 export const organizations = pgTable('organizations', {
@@ -302,6 +307,70 @@ export const emailProcessingLogs = pgTable('email_processing_logs', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Notification preferences table
+export const notificationPreferences = pgTable('notification_preferences', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  notificationType: notificationTypeEnum('notification_type').notNull(),
+  channel: notificationChannelEnum('channel').notNull(),
+  isEnabled: boolean('is_enabled').notNull().default(true),
+  settings: text('settings'), // JSON object for channel-specific settings (email templates, phone numbers, etc.)
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Email notifications table
+export const emailNotifications = pgTable('email_notifications', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  recipientId: uuid('recipient_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  recipientEmail: varchar('recipient_email', { length: 255 }).notNull(),
+  notificationType: notificationTypeEnum('notification_type').notNull(),
+  subject: varchar('subject', { length: 500 }).notNull(),
+  htmlBody: text('html_body').notNull(),
+  textBody: text('text_body'),
+  status: notificationStatusEnum('status').notNull().default('pending'),
+  errorMessage: text('error_message'),
+  sentAt: timestamp('sent_at'),
+  relatedTicketId: uuid('related_ticket_id').references(() => tickets.id, { onDelete: 'set null' }),
+  relatedAssetId: uuid('related_asset_id').references(() => assets.id, { onDelete: 'set null' }),
+  relatedSlaAlertId: uuid('related_sla_alert_id').references(() => slaAlerts.id, { onDelete: 'set null' }),
+  metadata: text('metadata'), // JSON object for additional notification-specific data
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Automation rules table
+export const automationRules = pgTable('automation_rules', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  ruleType: automationRuleTypeEnum('rule_type').notNull(),
+  isActive: boolean('is_active').notNull().default(true),
+  priority: integer('priority').notNull().default(1), // Higher number = higher priority
+  conditions: text('conditions').notNull(), // JSON array of condition objects
+  actions: text('actions').notNull(), // JSON array of action objects
+  createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  lastTriggered: timestamp('last_triggered'),
+  triggerCount: integer('trigger_count').notNull().default(0),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Automation rule execution logs table
+export const automationRuleExecutions = pgTable('automation_rule_executions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  ruleId: uuid('rule_id').notNull().references(() => automationRules.id, { onDelete: 'cascade' }),
+  ticketId: uuid('ticket_id').references(() => tickets.id, { onDelete: 'set null' }),
+  status: varchar('status', { length: 50 }).notNull(), // 'success', 'failed', 'skipped'
+  executionData: text('execution_data'), // JSON object with execution details
+  errorMessage: text('error_message'),
+  executedAt: timestamp('executed_at').defaultNow().notNull(),
+});
+
 // Relations
 export const organizationsRelations = relations(organizations, ({ many }) => ({
   users: many(users),
@@ -319,6 +388,10 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   articleTicketLinks: many(articleTicketLinks),
   emailConfigurations: many(emailConfigurations),
   emailProcessingLogs: many(emailProcessingLogs),
+  notificationPreferences: many(notificationPreferences),
+  emailNotifications: many(emailNotifications),
+  automationRules: many(automationRules),
+  automationRuleExecutions: many(automationRuleExecutions),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -333,6 +406,9 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   sessions: many(sessions),
   knowledgeArticles: many(knowledgeArticles),
   articleTicketLinksCreated: many(articleTicketLinks),
+  notificationPreferences: many(notificationPreferences),
+  emailNotifications: many(emailNotifications),
+  automationRulesCreated: many(automationRules),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -552,6 +628,67 @@ export const emailProcessingLogsRelations = relations(emailProcessingLogs, ({ on
   }),
 }));
 
+export const notificationPreferencesRelations = relations(notificationPreferences, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [notificationPreferences.organizationId],
+    references: [organizations.id],
+  }),
+  user: one(users, {
+    fields: [notificationPreferences.userId],
+    references: [users.id],
+  }),
+}));
+
+export const emailNotificationsRelations = relations(emailNotifications, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [emailNotifications.organizationId],
+    references: [organizations.id],
+  }),
+  recipient: one(users, {
+    fields: [emailNotifications.recipientId],
+    references: [users.id],
+  }),
+  relatedTicket: one(tickets, {
+    fields: [emailNotifications.relatedTicketId],
+    references: [tickets.id],
+  }),
+  relatedAsset: one(assets, {
+    fields: [emailNotifications.relatedAssetId],
+    references: [assets.id],
+  }),
+  relatedSlaAlert: one(slaAlerts, {
+    fields: [emailNotifications.relatedSlaAlertId],
+    references: [slaAlerts.id],
+  }),
+}));
+
+export const automationRulesRelations = relations(automationRules, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [automationRules.organizationId],
+    references: [organizations.id],
+  }),
+  createdBy: one(users, {
+    fields: [automationRules.createdBy],
+    references: [users.id],
+  }),
+  executions: many(automationRuleExecutions),
+}));
+
+export const automationRuleExecutionsRelations = relations(automationRuleExecutions, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [automationRuleExecutions.organizationId],
+    references: [organizations.id],
+  }),
+  rule: one(automationRules, {
+    fields: [automationRuleExecutions.ruleId],
+    references: [automationRules.id],
+  }),
+  ticket: one(tickets, {
+    fields: [automationRuleExecutions.ticketId],
+    references: [tickets.id],
+  }),
+}));
+
 // Type exports for use in the application
 export type Organization = typeof organizations.$inferSelect;
 export type NewOrganization = typeof organizations.$inferInsert;
@@ -591,3 +728,11 @@ export type EmailConfiguration = typeof emailConfigurations.$inferSelect;
 export type NewEmailConfiguration = typeof emailConfigurations.$inferInsert;
 export type EmailProcessingLog = typeof emailProcessingLogs.$inferSelect;
 export type NewEmailProcessingLog = typeof emailProcessingLogs.$inferInsert;
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type NewNotificationPreference = typeof notificationPreferences.$inferInsert;
+export type EmailNotification = typeof emailNotifications.$inferSelect;
+export type NewEmailNotification = typeof emailNotifications.$inferInsert;
+export type AutomationRule = typeof automationRules.$inferSelect;
+export type NewAutomationRule = typeof automationRules.$inferInsert;
+export type AutomationRuleExecution = typeof automationRuleExecutions.$inferSelect;
+export type NewAutomationRuleExecution = typeof automationRuleExecutions.$inferInsert;
