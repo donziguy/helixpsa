@@ -64,7 +64,7 @@
 6. Restart: `docker rm -f helixpsa helixpsa-tunnel && docker run ... (see deploy script)`
 
 ## Current Status
-- **Last build:** v2.9 (March 28, 2026, 09:03 UTC — Latest deployment successful!)
+- **Last build:** v2.10 (March 28, 2026, 15:08 UTC — QuickBooks integration complete!)
 - **Authentication:** Complete NextAuth.js integration with credentials provider, middleware protection, user sessions, logout functionality, and client portal authentication
 - **Database:** PostgreSQL with complete schema including reports/analytics queries, organization-scoped security, email configuration and processing log tables
 - **API:** Full tRPC implementation with protected procedures, input validation via Zod, AI router with intelligent ticket analysis and suggestions, email router for IMAP management, portal router for client access
@@ -106,7 +106,16 @@
   - Enhanced tRPC schema validation for new settings structure
   - Created comprehensive test suite with 12/16 tests passing
   - Updated component to use modern React patterns with useEffect for data management
-- **Latest Update (2026-03-27):** ✅ MOBILE RESPONSIVENESS COMPLETE! Built comprehensive mobile optimization system:
+- **Latest Update (2026-03-28):** ✅ QUICKBOOKS INTEGRATION COMPLETE! Finalized all automation & integration features:
+  - Created comprehensive QuickBooks Online integration service with OAuth token management and refresh
+  - Implemented time-to-invoice sync functionality with client-based billing automation
+  - Added tRPC API layer with full CRUD operations for QuickBooks connections
+  - Enhanced automation page with dedicated Integrations tab showing Slack & QuickBooks status
+  - Created test suite with comprehensive validation and error handling coverage
+  - Added encrypted credential storage with proper security measures
+  - Integrated QuickBooks schema and relations into main database structure
+  - All Phase 7 automation and integration features now complete (items 7.3 & 7.4)
+- **Previous Update (2026-03-27):** ✅ MOBILE RESPONSIVENESS COMPLETE! Built comprehensive mobile optimization system:
   - Created useMediaQuery hook with useIsMobile, useIsTablet, useIsDesktop breakpoint utilities
   - Enhanced Sidebar component with mobile-first design: overlay mode, touch-friendly navigation, collapsible menu
   - Built MobileHeader component with hamburger menu, proper touch targets (44px minimum), fixed positioning
