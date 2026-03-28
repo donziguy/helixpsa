@@ -14,7 +14,11 @@ import {
   AlertTriangle,
   BarChart3,
   Minus,
-  X
+  X,
+  Link,
+  ExternalLink,
+  DollarSign,
+  MessageCircle
 } from 'lucide-react'
 import type { AutomationCondition, AutomationAction } from '@/lib/automation/AutomationService'
 import { useToastHelpers } from '@/lib/toast-context'
@@ -273,6 +277,16 @@ export default function AutomationPage() {
             >
               Execution History
             </button>
+            <button
+              onClick={() => setActiveTab('integrations')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'integrations'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Integrations
+            </button>
           </nav>
         </div>
 
@@ -407,6 +421,10 @@ export default function AutomationPage() {
                 )}
               </div>
             </div>
+          )}
+
+          {activeTab === 'integrations' && (
+            <IntegrationsPanel />
           )}
         </div>
       </div>
@@ -711,6 +729,228 @@ export default function AutomationPage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// Integrations Panel Component
+function IntegrationsPanel() {
+  const { success, error } = useToastHelpers()
+  
+  // QuickBooks integration
+  const { data: qbIntegration, refetch: refetchQB } = api.quickbooks.getIntegration.useQuery()
+  const testQBMutation = api.quickbooks.testConnection.useMutation({
+    onSuccess: (result) => {
+      success('Success', `Connected to ${result.companyName}`)
+    },
+    onError: (err) => {
+      error('Error', `Connection failed: ${err.message}`)
+    }
+  })
+  
+  // Slack integration  
+  const { data: slackIntegration, refetch: refetchSlack } = api.slack.getIntegration.useQuery()
+  const testSlackMutation = api.slack.testConnection.useMutation({
+    onSuccess: () => {
+      success('Success', 'Slack connection verified')
+    },
+    onError: (err) => {
+      error('Error', `Slack test failed: ${err.message}`)
+    }
+  })
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">External Integrations</h2>
+        <p className="text-sm text-gray-500">
+          Connect HelixPSA with external tools to automate workflows
+        </p>
+      </div>
+
+      {/* QuickBooks Integration */}
+      <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <DollarSign className="h-6 w-6 text-green-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">QuickBooks Online</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                Sync billable time entries to QuickBooks as invoices
+              </p>
+              {qbIntegration && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={`w-2 h-2 rounded-full ${
+                      qbIntegration.isActive && qbIntegration.hasValidTokens 
+                        ? 'bg-green-500' 
+                        : 'bg-red-500'
+                    }`} />
+                    <span>
+                      {qbIntegration.isActive && qbIntegration.hasValidTokens 
+                        ? 'Connected' 
+                        : 'Connection issues'}
+                    </span>
+                    {qbIntegration.sandbox && (
+                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
+                        Sandbox
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Company ID: {qbIntegration.companyId}
+                  </div>
+                  {qbIntegration.lastSyncAt && (
+                    <div className="text-xs text-gray-500">
+                      Last sync: {new Date(qbIntegration.lastSyncAt).toLocaleString()}
+                    </div>
+                  )}
+                  {qbIntegration.syncErrors && qbIntegration.syncErrors.length > 0 && (
+                    <div className="text-xs text-red-600">
+                      Recent errors: {qbIntegration.syncErrors.slice(0, 1).join(', ')}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {qbIntegration && (
+              <button
+                onClick={() => testQBMutation.mutate()}
+                disabled={testQBMutation.isLoading}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
+              >
+                {testQBMutation.isLoading ? 'Testing...' : 'Test Connection'}
+              </button>
+            )}
+            <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2">
+              {qbIntegration ? 'Manage' : 'Connect'}
+              <ExternalLink className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        
+        {!qbIntegration && (
+          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Connect your QuickBooks Online account to automatically create invoices from billable time entries.
+              This integration allows you to sync client billing data and streamline your accounting workflow.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Slack Integration */}
+      <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <MessageCircle className="h-6 w-6 text-purple-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">Slack</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                Send automated notifications to Slack channels and direct messages
+              </p>
+              {slackIntegration && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={`w-2 h-2 rounded-full ${
+                      slackIntegration.isActive ? 'bg-green-500' : 'bg-red-500'
+                    }`} />
+                    <span>
+                      {slackIntegration.isActive ? 'Connected' : 'Disabled'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Workspace: {slackIntegration.teamName}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Bot ID: {slackIntegration.botUserId}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {slackIntegration && (
+              <button
+                onClick={() => testSlackMutation.mutate()}
+                disabled={testSlackMutation.isLoading}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
+              >
+                {testSlackMutation.isLoading ? 'Testing...' : 'Test Connection'}
+              </button>
+            )}
+            <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2">
+              {slackIntegration ? 'Manage' : 'Connect'}
+              <ExternalLink className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        
+        {!slackIntegration && (
+          <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200">
+            <p className="text-sm text-purple-700 dark:text-purple-300">
+              Connect your Slack workspace to receive real-time notifications about SLA breaches, 
+              ticket assignments, asset maintenance, and other important events.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Available Integrations */}
+      <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+        <h3 className="text-lg font-semibold mb-4">Available Integrations</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded border">
+            <div className="flex items-center gap-3">
+              <Link className="h-5 w-5 text-gray-400" />
+              <div>
+                <div className="font-medium">Microsoft Teams</div>
+                <div className="text-sm text-gray-500">Team notifications</div>
+              </div>
+            </div>
+            <span className="text-sm text-gray-400">Coming Soon</span>
+          </div>
+          
+          <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded border">
+            <div className="flex items-center gap-3">
+              <Link className="h-5 w-5 text-gray-400" />
+              <div>
+                <div className="font-medium">Zapier</div>
+                <div className="text-sm text-gray-500">Workflow automation</div>
+              </div>
+            </div>
+            <span className="text-sm text-gray-400">Coming Soon</span>
+          </div>
+          
+          <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded border">
+            <div className="flex items-center gap-3">
+              <Link className="h-5 w-5 text-gray-400" />
+              <div>
+                <div className="font-medium">Xero</div>
+                <div className="text-sm text-gray-500">Accounting sync</div>
+              </div>
+            </div>
+            <span className="text-sm text-gray-400">Coming Soon</span>
+          </div>
+          
+          <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded border">
+            <div className="flex items-center gap-3">
+              <Link className="h-5 w-5 text-gray-400" />
+              <div>
+                <div className="font-medium">ConnectWise</div>
+                <div className="text-sm text-gray-500">PSA migration</div>
+              </div>
+            </div>
+            <span className="text-sm text-gray-400">Coming Soon</span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

@@ -354,6 +354,24 @@ export const slackIntegrations = pgTable('slack_integrations', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+// QuickBooks integrations table
+export const quickbooksIntegrations = pgTable('quickbooks_integrations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  companyId: varchar('company_id', { length: 255 }).notNull(), // QuickBooks company ID
+  accessToken: text('access_token').notNull(), // Encrypted OAuth token
+  refreshToken: text('refresh_token').notNull(), // Encrypted refresh token
+  clientId: varchar('client_id', { length: 255 }).notNull(),
+  clientSecret: text('client_secret').notNull(), // Encrypted
+  tokenExpiresAt: timestamp('token_expires_at').notNull(),
+  sandbox: boolean('sandbox').notNull().default(true), // True for sandbox, false for production
+  isActive: boolean('is_active').notNull().default(true),
+  lastSyncAt: timestamp('last_sync_at'),
+  syncErrors: text('sync_errors'), // JSON array of recent errors
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 // Slack notifications table
 export const slackNotifications = pgTable('slack_notifications', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -707,6 +725,13 @@ export const slackIntegrationsRelations = relations(slackIntegrations, ({ one, m
   slackNotifications: many(slackNotifications),
 }));
 
+export const quickbooksIntegrationsRelations = relations(quickbooksIntegrations, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [quickbooksIntegrations.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
 export const slackNotificationsRelations = relations(slackNotifications, ({ one }) => ({
   organization: one(organizations, {
     fields: [slackNotifications.organizationId],
@@ -804,6 +829,8 @@ export type SlackIntegration = typeof slackIntegrations.$inferSelect;
 export type NewSlackIntegration = typeof slackIntegrations.$inferInsert;
 export type SlackNotification = typeof slackNotifications.$inferSelect;
 export type NewSlackNotification = typeof slackNotifications.$inferInsert;
+export type QuickBooksIntegration = typeof quickbooksIntegrations.$inferSelect;
+export type NewQuickBooksIntegration = typeof quickbooksIntegrations.$inferInsert;
 export type AutomationRule = typeof automationRules.$inferSelect;
 export type NewAutomationRule = typeof automationRules.$inferInsert;
 export type AutomationRuleExecution = typeof automationRuleExecutions.$inferSelect;
