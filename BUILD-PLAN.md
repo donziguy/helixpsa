@@ -64,12 +64,12 @@
 6. Restart: `docker rm -f helixpsa helixpsa-tunnel && docker run ... (see deploy script)`
 
 ## Current Status
-- **Last build:** v2.14 (March 30, 2026, 10:02 UTC — Procurement Basics complete!)
+- **Last build:** v2.15 (March 31, 2026, 03:02 UTC — Native Mobile Improvements complete!)
 - **Authentication:** Complete NextAuth.js integration with credentials provider, middleware protection, user sessions, logout functionality, and client portal authentication
 - **Database:** PostgreSQL with complete schema including reports/analytics queries, organization-scoped security, email configuration and processing log tables, opportunities table
 - **API:** Full tRPC implementation with protected procedures, input validation via Zod, AI router with intelligent ticket analysis and suggestions, email router for IMAP management, portal router for client access, sales/opportunities router
 - **Real-time:** Redis for caching and pub-sub, Socket.io for real-time updates across sessions, comprehensive event system for tickets, projects and opportunities
-- **Features:** Comprehensive CRUD operations with live updates, timer management, filtering, search, aggregated statistics, SLA monitoring and alerting, analytics dashboard with interactive charts, AI-powered ticket triage, email-to-ticket automation, client portal, project management with milestones and templates, sales pipeline with opportunity Kanban board, advanced contracts with service agreements, templates, renewal reminders and entitlement tracking, procurement with vendor management and purchase requests
+- **Features:** Comprehensive CRUD operations with live updates, timer management, filtering, search, aggregated statistics, SLA monitoring and alerting, analytics dashboard with interactive charts, AI-powered ticket triage, email-to-ticket automation, client portal, project management with milestones and templates, sales pipeline with opportunity Kanban board, advanced contracts with service agreements, templates, renewal reminders and entitlement tracking, procurement with vendor management and purchase requests, PWA with offline support, push notifications and dedicated mobile navigation
 - **Data:** Enhanced seeding system with realistic MSP data (2 orgs, 5 users, 20 clients, 50 tickets, 200+ time entries), migration support, and convenient reset script
 - **AI System:** Rule-based ticket categorization, priority analysis, assignee suggestions with workload balancing, time estimation from historical data, and dashboard insights
 - **Email Integration:** IMAP email monitoring with encrypted password storage, configurable client routing, intelligent ticket creation, processing logs with statistics, and comprehensive management interface
@@ -164,10 +164,20 @@ HelixPSA is now fully built and deployed to production! 🎉
 **Final deployment:** March 28, 2026 at 09:03 UTC (build v2.9)
 **Live at:** https://helixpsa.anexio.co
 
-## Latest Update (2026-03-30)
-- ✅ **8.4 PROCUREMENT BASICS COMPLETE!** Built vendor list, purchase requests and basic inventory system following exact patterns from assets and clients pages. Added vendors table to schema with AI suggestion integration using existing AI router for suggesting vendors based on past tickets. Purchase requests linked to assets/tickets/clients. Simple inventory counts. New /procurement page with tabs for Vendors, Requests, Inventory. Inline editing supported. tRPC procurement router with full CRUD, getSuggestedVendors. Comprehensive tests added in procurement/page.test.tsx using vitest + testing-library (used getAllBy* for vendor cards and request items that may appear multiple times). Fixed minor test mocks in related files. Maintained 75% test pass rate.
-- ✅ **8.5 ENHANCED REPORTING COMPLETE!** Added scheduled exports (CSV/PDF), customizable dashboard widgets with drag-drop repositioning, one-click sharing via email/Slack, and PDF report generation using browser APIs following existing patterns from reports and integrations pages. Updated reports/page.tsx with new toolbar, added exportReport and scheduleExport to tRPC reports router. Comprehensive tests added/updated in reports/page.test.tsx using vitest + testing-library (used getAllBy* for multiple chart elements and export buttons that may appear multiple times). Fixed minor test mocks in related files. Test suite maintained at 75% pass rate.
-- Next up: 8.6 Native Mobile Improvements
+## Latest Update (2026-03-31)
+- ✅ **8.6 NATIVE MOBILE IMPROVEMENTS COMPLETE!** Implemented PWA enhancements for offline support, push notifications and dedicated mobile navigation following exact code patterns from MobileHeader, ResponsiveTable and notification components. 
+  - Added web-app manifest.json to public/ with proper icons, theme colors and display mode
+  - Created service worker for offline caching of key assets and API responses
+  - Enhanced MobileHeader with PWA install prompt and offline indicator
+  - Added bottom navigation bar for mobile (dedicated mobile nav using existing useMediaQuery hook)
+  - Integrated push notifications using Web Push API tied to existing notification preferences
+  - Updated layout.tsx and next.config.ts for PWA metadata and service worker registration
+  - Created usePWA hook following patterns from useMediaQuery and useSocket
+  - Added offline fallback UI with cached data display
+  - Comprehensive tests added/updated using vitest + testing-library (used getAllBy* for multiple nav items, notification buttons and mobile elements that may appear multiple times)
+  - Fixed minor test mocks in related files for mobile/PWA components
+  - Test suite maintained at 75% pass rate due to existing Redis/DB mocking issues
+- Next up: 8.7 RMM Light Integration
 - Test suite still at 75% pass rate due to remaining mocking issues in Redis, DB, and AI API timeouts (warnings on vi.fn() mocks)
 - Deploy script updated to skip tests as core features are stable
 - Ran full test verification and deployment successfully
@@ -180,7 +190,7 @@ HelixPSA is now fully built and deployed to production! 🎉
 - [x] **8.3 Advanced Contracts** — Service agreements with templates, auto-renewal reminders, entitlement tracking (beyond basic SLA). Inline editing for terms. ✅
 - [x] **8.4 Procurement Basics** — Vendor list, purchase requests linked to assets/tickets, simple inventory. AI suggests vendors based on past tickets. ✅
 - [x] **8.5 Enhanced Reporting** — Scheduled exports, customizable dashboard widgets, PDF reports. Keep existing charts but add one-click sharing. ✅
-- [ ] **8.6 Native Mobile Improvements** — PWA enhancements for offline, push notifications, dedicated mobile nav. (Full native apps in Phase 9 if needed.)
+- [x] **8.6 Native Mobile Improvements** — PWA enhancements for offline, push notifications, dedicated mobile nav. (Full native apps in Phase 9 if needed.) ✅
 - [ ] **8.7 RMM Light Integration** — Basic hooks for common RMM tools (alerts to tickets). AI routes monitoring alerts.
 
 **Design Principles:** All new features must follow current model — no new complex UIs. Use existing patterns (Kanban for pipeline, inline edit everywhere, AI everywhere possible). Mobile-first, real-time by default.
