@@ -10,6 +10,21 @@ global.fetch = vi.fn(() =>
   } as Response)
 );
 
+// Mock window.matchMedia for responsive components and useMediaQuery hook
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
 // Mock database modules for tests
 vi.mock('../db/index', () => ({
   db: {},
@@ -318,6 +333,7 @@ vi.mock('@/utils/api', () => {
         suggestPriority: { useMutation: vi.fn(() => mockMutationResult) },
         suggestAssignee: { useMutation: vi.fn(() => mockMutationResult) },
       },
+      Provider: ({ children }: any) => children,
     },
     // Add mock refs for specific tests
     __mockRefs: {
