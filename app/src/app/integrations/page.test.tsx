@@ -2,50 +2,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import IntegrationsPage from './page';
 import { api } from '@/utils/api';
+import { createMockQuery, createMockMutation, resetApiMocks } from '@/test-utils/trpc-mocks';
 
 vi.mock('@/components/Toast', () => ({
   toast: vi.fn(),
 }));
 
-vi.mock('@/utils/api', () => ({
-  api: {
-    slack: {
-      getIntegration: {
-        useQuery: vi.fn(),
-      },
-      getChannels: {
-        useQuery: vi.fn(),
-      },
-      getNotificationPreferences: {
-        useQuery: vi.fn(),
-      },
-      getNotificationHistory: {
-        useQuery: vi.fn(),
-      },
-      getNotificationStatistics: {
-        useQuery: vi.fn(),
-      },
-      addIntegration: {
-        useMutation: vi.fn(),
-      },
-      testIntegration: {
-        useMutation: vi.fn(),
-      },
-      disableIntegration: {
-        useMutation: vi.fn(),
-      },
-      updateNotificationPreferences: {
-        useMutation: vi.fn(),
-      },
-      sendTestNotification: {
-        useMutation: vi.fn(),
-      },
-      processPending: {
-        useMutation: vi.fn(),
-      },
-    },
-  },
-}));
+// Uses global mock from setup.ts - no local api mock needed
 
 const mockIntegration = {
   id: 'integration-1',
