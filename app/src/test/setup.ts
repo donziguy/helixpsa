@@ -144,8 +144,7 @@ vi.mock('socket.io-client', () => {
 // Mock crypto
 vi.mock('crypto', async (importOriginal) => {
   const actual = await importOriginal() as any;
-  return {
-    ...actual,
+  const mocked = {
     createHash: vi.fn(() => ({
       update: vi.fn(() => ({
         digest: vi.fn(() => 'mocked-hash'),
@@ -160,6 +159,12 @@ vi.mock('crypto', async (importOriginal) => {
       update: vi.fn(() => 'decrypted'),
       final: vi.fn(() => ''),
     })),
+    scryptSync: vi.fn(() => Buffer.from('32-byte-mock-key-for-scrypt-!!')),
+  };
+  return {
+    ...actual,
+    ...mocked,
+    default: mocked,
   };
 });
 

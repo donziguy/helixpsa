@@ -38,7 +38,7 @@ describe('quickbooksRouter', () => {
         isActive: true,
         lastSyncAt: new Date('2024-01-01T00:00:00Z'),
         syncErrors: '[]',
-        tokenExpiresAt: new Date('2024-12-31T23:59:59Z'),
+        tokenExpiresAt: new Date(Date.now() + 86400000), // future date
         createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date('2024-01-01T00:00:00Z')
       }
